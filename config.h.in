@@ -1,0 +1,7 @@
+#ifndef CONFIG_H__
+#define CONFIG_H__
+
+#cmakedefine BYTE_ORDER_BIG_ENDIAN
+#cmakedefine MADDR_MSIZE_64BIT
+
+#endif
