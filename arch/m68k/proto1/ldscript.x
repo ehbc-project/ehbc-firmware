@@ -75,7 +75,7 @@ SECTIONS
         PROVIDE_HIDDEN(__fini_array_end = .);
     }
 
-    .rodata ALIGN(4) :
+    .rodata :
     {
         KEEP(*(.rodata .rodata.*))
     } >FLASH

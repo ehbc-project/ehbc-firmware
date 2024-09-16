@@ -5,8 +5,6 @@
 .text
 .global         __init_arch
 __init_arch:
-
-.Linit_bss:
     /* initialize .bss section */
     movea.l     #__bss_start,%a0
     movea.l     #__bss_end,%a1
@@ -17,7 +15,6 @@ __init_arch:
     bra         0b
 1:  
 
-.Linit_data:
     /* initialize .data section */
     movea.l     #__data_init_start,%a0
     movea.l     #__data_start,%a1
@@ -29,7 +26,6 @@ __init_arch:
     bra         0b
 1:
 
-.Lrun_ctors:
     /* run ctors */
     movea.l     #__init_array_start,%a2
     movea.l     #__init_array_end,%a3
@@ -40,7 +36,6 @@ __init_arch:
     jsr         %a4@
 1:
 
-.Lcall_main:
     /* call main */
     jsr         main
 

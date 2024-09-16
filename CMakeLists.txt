@@ -59,8 +59,8 @@ endif()
 
 # Subdirectories
 add_subdirectory(arch)
-add_subdirectory(drivers)
-add_subdirectory(core)
+add_subdirectory(src)
+add_subdirectory(rsrc)
 
 # Compile Options
 target_compile_features(firmware PUBLIC c_std_11)
@@ -75,8 +75,7 @@ target_compile_options(firmware PUBLIC
         -pedantic
         -pedantic-errors>)
 
-target_include_directories(firmware PUBLIC "${CMAKE_SOURCE_DIR}/include")
-target_include_directories(firmware PRIVATE "${CMAKE_SOURCE_DIR}")
+target_include_directories(firmware PUBLIC "${CMAKE_SOURCE_DIR}/src")
 target_include_directories(firmware PRIVATE "${CMAKE_BINARY_DIR}")
 
 configure_file("config.h.in" "config.h")
