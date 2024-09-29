@@ -5,6 +5,7 @@
 #include "hw/vga.h"
 #include "hw/vgaregs.h"
 #include "memory.h"
+#include "io.h"
 
 #define VGA_MEMORY_BASE     0xFE0A0000
 
@@ -44,8 +45,8 @@ static void screen_off()
 static void screen_on()
 {
     vga_out_sr(0x01, vga_in_sr(0x01) & 0xDF);
-    *(hwreg8_t*)VGA_ISR1;
-    *(hwreg8_t*)VGA_AR_AD = 0x20;
+    io_read_8(VGA_ISR1);
+    io_write_8(VGA_AR_AD, 0x20);
 }
 
 static void enable_font_access()
@@ -128,7 +129,7 @@ int vga_set_mode(int modenum)
     screen_off();
 
     // set palette mask
-    *(hwreg8_t*)VGA_PALMASK = 0xFF;
+    io_write_8(VGA_PALMASK, 0xFF);
 
     // load palette
     int palsize = mode->palette_len / 3;

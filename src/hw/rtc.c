@@ -6,8 +6,10 @@
 #include "memory.h"
 #include "macros.h"
 
-#define CMOS_INDEX        0xFE000070
-#define CMOS_DATA         0xFE000071
+#include "io.h"
+
+#define CMOS_INDEX        0x0070
+#define CMOS_DATA         0x0071
 
 // PORT_CMOS_INDEX nmi disable bit
 #define NMI_DISABLE_BIT 0x80
@@ -43,15 +45,15 @@
 uint8_t rtc_read(int idx)
 {
     idx |= NMI_DISABLE_BIT;
-    *(hwreg8_t*)CMOS_INDEX = idx;
-    return *(hwreg8_t*)CMOS_DATA;
+    io_write_8(CMOS_INDEX, idx);
+    return io_read_8(CMOS_DATA);
 }
 
 void rtc_write(int idx, uint8_t val)
 {
     idx |= NMI_DISABLE_BIT;
-    *(hwreg8_t*)CMOS_INDEX = idx;
-    *(hwreg8_t*)CMOS_DATA = val;
+    io_write_8(CMOS_INDEX, idx);
+    io_write_8(CMOS_DATA, val);
 }
 
 int rtc_wait_update(void)

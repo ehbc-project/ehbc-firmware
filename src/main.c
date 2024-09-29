@@ -37,12 +37,30 @@ void main(void)
         vga_set_cursor_pos(i + 1);
     }
 
-    const char str[] = "Hello, World!";
-    for (int i = 0; i < sizeof(str); i++) {
-        fbuf_base[i << 1] = str[i];
+    const char str[] = "KB OK";
+
+    for (int i = 11; i < 11 + sizeof(str); i++) {
+        fbuf_base[i << 1] = str[i - 11];
     }
 
-    for (int i = 0; i < 1048576; i++) {}
+    volatile void* memtest_ptr = (void*)0xFFFC;
+    for (;;) {
+        *(volatile uint32_t*)memtest_ptr = (uint32_t)memtest_ptr;
+
+        if (*(volatile uint32_t*)memtest_ptr != (uint32_t)memtest_ptr) {
+            break;
+        }
+
+        uint32_t val = ((uint32_t)memtest_ptr + 4) >> 10;
+        for (int i = 9; val > 0; i--) {
+            fbuf_base[i << 1] = val % 10 + '0';
+            val /= 10;
+        }
+
+        memtest_ptr = (void*)((uint32_t)memtest_ptr + 0x10000);
+    }
+
+    for (int i = 0; i < 10485760; i++) {}
 
     // start video mode tests
     const int video_modes[] = {

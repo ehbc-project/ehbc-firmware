@@ -1,22 +1,14 @@
+#include <stdint.h>
 #include <stddef.h>
 
-
-__attribute__((interrupt_handler))
-static void bus_error()
-{
-
-}
-
-__attribute__((interrupt_handler))
-static void address_error()
-{
-
-}
+void bus_error();
+void address_error();
+void other_exception();
 
 __attribute__((interrupt_handler))
 static void divide_by_zero()
 {
-
+    
 }
 
 __attribute__((interrupt_handler))
@@ -63,12 +55,6 @@ static void fpu_exception()
 
 __attribute__((interrupt_handler))
 static void mmu_exception()
-{
-
-}
-
-__attribute__((interrupt_handler))
-static void other_exception()
 {
 
 }
@@ -130,8 +116,3 @@ void (*exception_vector[256])() = {
     fpu_exception,
     mmu_exception,
 };
-
-void init_exception_vector()
-{
-    __asm__ volatile ("movec %0,%%vbr" : : "Ia" (exception_vector));
-}

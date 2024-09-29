@@ -3,26 +3,26 @@
 
 #include "types.h"
 
-#define VGA_CR_M_ADDR       0xFE0003B4
-#define VGA_CR_M_DATA       0xFE0003B5
-#define VGA_FCR             0xFE0003BA
-#define VGA_AR_AD           0xFE0003C0
-#define VGA_AR_DR           0xFE0003C1
-#define VGA_ISR0            0xFE0003C2
-#define VGA_MISCW           0xFE0003C2
-#define VGA_SR_ADDR         0xFE0003C4
-#define VGA_SR_DATA         0xFE0003C5
-#define VGA_PALMASK         0xFE0003C6
-#define VGA_DR_STATE        0xFE0003C7
-#define VGA_DR_ADDRR        0xFE0003C7
-#define VGA_DR_ADDRW        0xFE0003C8
-#define VGA_DR_DATA         0xFE0003C9
-#define VGA_MISCR           0xFE0003CC
-#define VGA_GR_ADDR         0xFE0003CE
-#define VGA_GR_DATA         0xFE0003CF
-#define VGA_CR_C_ADDR       0xFE0003D4
-#define VGA_CR_C_DATA       0xFE0003D5
-#define VGA_ISR1            0xFE0003DA
+#define VGA_CR_M_ADDR       0x03B4
+#define VGA_CR_M_DATA       0x03B5
+#define VGA_FCR             0x03BA
+#define VGA_AR_AD           0x03C0
+#define VGA_AR_DR           0x03C1
+#define VGA_ISR0            0x03C2
+#define VGA_MISCW           0x03C2
+#define VGA_SR_ADDR         0x03C4
+#define VGA_SR_DATA         0x03C5
+#define VGA_PALMASK         0x03C6
+#define VGA_DR_STATE        0x03C7
+#define VGA_DR_ADDRR        0x03C7
+#define VGA_DR_ADDRW        0x03C8
+#define VGA_DR_DATA         0x03C9
+#define VGA_MISCR           0x03CC
+#define VGA_GR_ADDR         0x03CE
+#define VGA_GR_DATA         0x03CF
+#define VGA_CR_C_ADDR       0x03D4
+#define VGA_CR_C_DATA       0x03D5
+#define VGA_ISR1            0x03DA
 
 void vga_out_cr(int idx, uint8_t val, int mport);
 uint8_t vga_in_cr(int idx, int mport);

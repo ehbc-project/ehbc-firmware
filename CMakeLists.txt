@@ -1,15 +1,11 @@
 cmake_minimum_required(VERSION 3.13)
 cmake_policy(SET CMP0076 NEW)
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(CheckLanguage)
 include(CheckTypeSize)
 
-find_file(CMAKE_TOOLCHAIN_FILE
-    M68kUnknownElfToolchain.cmake
-    HINTS ENV PATH
-    PATH_SUFFIXES ../share/cmake/toolchains
-    REQUIRED)
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/cmake/M68kUnknownElfToolchain.cmake")
 
 project("ehbc-firmware")
 
@@ -18,6 +14,7 @@ set(TARGET "m68k-proto1" CACHE STRING "Target name to build")
 string(REPLACE "-" ";" TARGET ${TARGET})
 list(GET TARGET 0 TARGET_ARCH)
 list(GET TARGET 1 TARGET_BOARD)
+enable_language(C ASM_VASM)
 
 # Target Configurations
 add_executable(firmware)
@@ -35,12 +32,6 @@ add_custom_target(elfinfo ALL
     USES_TERMINAL)
 
 # Compiler Tests
-check_language(ASM)
-if(${CMAKE_ASM_COMPILER_ID} NOT EQUAL "GNU")
-    message(FATAL_ERROR "GNU Assembler required.")
-else()
-    enable_language(ASM)
-endif()
 if (NOT DEFINED CMAKE_C_BYTE_ORDER)
     include(TestBigEndian)
     test_big_endian(BYTE_ORDER_BIG_ENDIAN)
@@ -75,6 +66,7 @@ target_compile_options(firmware PUBLIC
         -pedantic
         -pedantic-errors>)
 
+target_include_directories(firmware PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_include_directories(firmware PUBLIC "${CMAKE_SOURCE_DIR}/src")
 target_include_directories(firmware PRIVATE "${CMAKE_BINARY_DIR}")
 

@@ -23,6 +23,6 @@ struct floppy_info {
     enum floppy_data_rate data_rate;
 };
 
-int floppy_init(void);
+int floppy_init(int id, int type);
 
 #endif  // HW_FLOPPY_H__

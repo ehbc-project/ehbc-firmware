@@ -4,10 +4,13 @@
 
 #include "hw/ps2kbms.h"
 
-#define I8042_DATA              0xFE000060
-#define I8042_STATUS            0xFE000064
+#include "io.h"
 
-// Standard commands.
+// I/O port
+#define I8042_DATA              0x0060
+#define I8042_STATUS            0x0064
+
+// Standard commands
 #define I8042_CMD_CTL_RCTR      0x0120
 #define I8042_CMD_CTL_WCTR      0x1060
 #define I8042_CMD_CTL_TEST      0x01aa
@@ -63,7 +66,7 @@
 static int i8042_wait_read()
 {
     for (int i = 0; i < I8042_TIMEOUT; i++) {
-        uint8_t status = *(hwreg8_t*)I8042_STATUS;
+        uint8_t status = io_read_8(I8042_STATUS);
         if (status & I8042_STR_OBF) return 0;
     }
     return 1;
@@ -72,7 +75,7 @@ static int i8042_wait_read()
 static int i8042_wait_write()
 {
     for (int i = 0; i < I8042_TIMEOUT; i++) {
-        uint8_t status = *(hwreg8_t*)I8042_STATUS;
+        uint8_t status = io_read_8(I8042_STATUS);
         if (!(status & I8042_STR_IBF)) return 0;
     }
     return 1;
@@ -81,9 +84,9 @@ static int i8042_wait_write()
 static int i8042_flush()
 {
     for (int i = 0; i < I8042_BUFSIZE; i++) {
-        uint8_t status = *(hwreg8_t*)I8042_STATUS;
+        uint8_t status = io_read_8(I8042_STATUS);
         if (!(status & I8042_STR_OBF)) return 0;
-        uint8_t data = *(hwreg8_t*)I8042_DATA;
+        uint8_t data = io_read_8(I8042_DATA);
     }
     return 1;
 }
@@ -95,18 +98,18 @@ static int i8042_command(int command, uint8_t *param)
 
     int ret = i8042_wait_write();
     if (ret) return ret;
-    *(hwreg8_t*)I8042_STATUS = command;
+    io_write_8(I8042_STATUS, command);
 
     for (int i = 0; i < send; i++) {
         ret = i8042_wait_write();
         if (ret) return ret;
-        *(hwreg8_t*)I8042_DATA = param[i];
+        io_write_8(I8042_DATA, param[i]);
     }
 
     for (int i = 0; i < recv; i++) {
         ret = i8042_wait_read();
         if (ret) return ret;
-        param[i] = *(hwreg8_t*)I8042_DATA;
+        param[i] = io_read_8(I8042_DATA);
     }
 
     return 0;
@@ -115,7 +118,7 @@ static int i8042_command(int command, uint8_t *param)
 static int i8042_kbd_write(uint8_t c)
 {
     int ret = i8042_wait_write();
-    if (!ret) *(hwreg8_t*)I8042_DATA = c;
+    if (!ret) io_write_8(I8042_DATA, c);
     return ret;
 }
 
@@ -132,9 +135,9 @@ uint8_t ps2_ctr = I8042_CTR_KBDDIS | I8042_CTR_AUXDIS;
 static int ps2_recvbyte(int aux, int needack, int timeout)
 {
     for (int i = 0; i < timeout; i++) {
-        uint8_t status = *(hwreg8_t*)I8042_STATUS;
+        uint8_t status = io_read_8(I8042_STATUS);
         if (status & I8042_STR_OBF) {
-            uint8_t data = *(hwreg8_t*)I8042_DATA;
+            uint8_t data = io_read_8(I8042_DATA);
 
             if (!(status & I8042_STR_AUXDATA) == !aux) {
                 return data;
@@ -260,9 +263,9 @@ void ps2kbms_poll()
     }
 
 
-    uint8_t status = *(hwreg8_t*)I8042_STATUS;
+    uint8_t status = io_read_8(I8042_STATUS);
     if (!(status & I8042_STR_OBF)) return;
-    uint8_t data = *(hwreg8_t*)I8042_DATA;
+    uint8_t data = io_read_8(I8042_DATA);
     if (status & I8042_STR_AUXDATA) {
         if (!(ps2_ctr & I8042_CTR_AUXDIS)) {
             // process_mouse(data);
