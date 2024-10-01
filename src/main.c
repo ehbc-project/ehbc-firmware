@@ -1,3 +1,6 @@
+#include <assert.h>
+#include <stdio.h>
+
 #include "types.h"
 #include "macros.h"
 #include "hw/vga.h"
@@ -60,7 +63,7 @@ void main(void)
         memtest_ptr = (void*)((uint32_t)memtest_ptr + 0x10000);
     }
 
-    for (int i = 0; i < 10485760; i++) {}
+    for (int i = 0; i < 1048576; i++) {}
 
     // start video mode tests
     const int video_modes[] = {
@@ -73,15 +76,10 @@ void main(void)
             mc68681_tx(0, "Video mode not found\r\n");
             return;
         }
-        mc68681_tx(0, "Video mode ");
-        char hexstr[3];
-        hexstr[0] = (video_modes[i] >> 4) & 0xF;
-        hexstr[0] += (hexstr[0] > 9) ? 'A' - 10 : '0';
-        hexstr[1] = video_modes[i] & 0xF;
-        hexstr[1] += (hexstr[1] > 9) ? 'A' - 10 : '0';
-        hexstr[2] = 0;
-        mc68681_tx(0, hexstr);
-        mc68681_tx(0, "h\r\n");
+
+        char buf[16];
+        snprintf(buf, sizeof(buf), "Video mode %02Xh\r\n", video_modes[i]);
+        mc68681_tx(0, buf);
 
         volatile uint8_t* fbuf_baseb = (uint8_t*)mode->buf_base;
         volatile uint16_t* fbuf_basew = (uint16_t*)mode->buf_base;

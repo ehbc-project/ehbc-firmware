@@ -6,6 +6,9 @@
 bus_error:: 
 address_error::
 other_exception::
+    ; set frame pointer
+    MOVEA.L     SP,A6
+
     ; dump registers
     MOVE.L      A5,-(SP)
     MOVE.L      A4,-(SP)
@@ -13,9 +16,9 @@ other_exception::
     MOVE.L      A2,-(SP)
     MOVE.L      A1,-(SP)
     MOVE.L      A0,-(SP)
+    MOVE.L      D7,-(SP)
     MOVE.L      D6,-(SP)
     MOVE.L      D5,-(SP)
-    MOVE.L      D7,-(SP)
     MOVE.L      D4,-(SP)
     MOVE.L      D3,-(SP)
     MOVE.L      D2,-(SP)

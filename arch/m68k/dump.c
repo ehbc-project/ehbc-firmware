@@ -5,18 +5,6 @@
 
 #include "debug.h"
 
-char xdigit(int h) {
-    if (h < 10) return h + '0';
-    else return h + 'A' - 10;
-}
-
-char* hexstr(uint32_t val, char* str, int len) {
-    for (int i = len; i >= 0; i--) {
-        str[i - 1] = xdigit(val & 0xF);
-        val >>= 4;
-    }
-    return str;
-}
 
 __attribute__((packed))
 struct reg_dump {
@@ -45,92 +33,26 @@ const char* exception_name[] = {
 
 void handle_error(struct reg_dump regs, struct stack_frame frame)
 {
-    char str[16];
+    debug_printf("Exception (%s) Occured!\n\n", exception_name[frame.vector >> 2]);
 
-    debug_write("Exception (");
-    debug_write(exception_name[frame.vector >> 2]);
-    debug_write(") Occured!");
+    debug_printf("D0=%08lX D1=%08lX D2=%08lX D3=%08lX\n", regs.d[0], regs.d[1], regs.d[2], regs.d[3]);
+    debug_printf("D5=%08lX D6=%08lX D7=%08lX D8=%08lX\n", regs.d[5], regs.d[6], regs.d[7], regs.d[8]);
+    debug_printf("A0=%08lX A1=%08lX A2=%08lX A3=%08lX\n", regs.a[0], regs.a[1], regs.a[2], regs.a[3]);
+    debug_printf("A4=%08lX A5=%08lX SP=%08lX\n", regs.a[4], regs.a[5], regs.sp);
+    debug_printf("PC=%08lX SR=%04X\n\n", frame.pc, frame.sr);
 
-    debug_write("\r\n\r\nD0: ");
-    debug_write(hexstr(regs.d[0], str, 8));
+    debug_printf("Exception Vector Frame: Format #%X\n", frame.format);
 
-    debug_write(" D1: ");
-    debug_write(hexstr(regs.d[1], str, 8));
-
-    debug_write(" D2: ");
-    debug_write(hexstr(regs.d[2], str, 8));
-
-    debug_write(" D3: ");
-    debug_write(hexstr(regs.d[3], str, 8));
-
-    debug_write("\r\nD4: ");
-    debug_write(hexstr(regs.d[4], str, 8));
-
-    debug_write(" D5: ");
-    debug_write(hexstr(regs.d[5], str, 8));
-
-    debug_write(" D6: ");
-    debug_write(hexstr(regs.d[6], str, 8));
-    
-    debug_write(" D7: ");
-    debug_write(hexstr(regs.d[7], str, 8));
-
-    debug_write("\r\nA0: ");
-    debug_write(hexstr(regs.a[0], str, 8));
-
-    debug_write(" A1: ");
-    debug_write(hexstr(regs.a[1], str, 8));
-
-    debug_write(" A2: ");
-    debug_write(hexstr(regs.a[2], str, 8));
-    
-    debug_write(" A3: ");
-    debug_write(hexstr(regs.a[3], str, 8));
-
-    debug_write("\r\nA4: ");
-    debug_write(hexstr(regs.a[4], str, 8));
-    
-    debug_write(" A5: ");
-    debug_write(hexstr(regs.a[5], str, 8));
-    
-    if (frame.sr & 0x2000) {
-        if (frame.sr & 0x1000) {
-            debug_write(" MSP: ");
-        } else {
-            debug_write(" ISP: ");
-        }
-    } else {
-        debug_write(" USP: ");
-    }
-    debug_write(hexstr(regs.sp, str, 8));
-
-    debug_write("\r\nPC: ");
-    debug_write(hexstr(frame.pc, str, 8));
-    
-    str[4] = 0;
-    debug_write(" SR: ");
-    debug_write(hexstr(frame.sr, str, 4));
-
-    debug_write("\r\n\r\nException Vector Frame: Format #");
-    str[0] = xdigit(frame.format);
-    str[1] = 0;
-    debug_write(str);
     switch (frame.format) {
         case 0x2:
-            debug_write("\r\nInstruction Address: ");
-            debug_write(hexstr(frame.fmt2h.instr_addr, str, 8));
+            debug_printf("Instruction Address: %08lX\n", frame.fmt2h.instr_addr);
             break;
         case 0x9:
-            debug_write("\r\nInstruction Address: ");
-            debug_write(hexstr(frame.fmt2h.instr_addr, str, 8));
-            debug_write("\r\nInternal Register #0: ");
-            debug_write(hexstr(frame.fmt9h.internal[0], str, 4));
-            debug_write("\r\nInternal Register #1: ");
-            debug_write(hexstr(frame.fmt9h.internal[1], str, 4));
-            debug_write("\r\nInternal Register #2: ");
-            debug_write(hexstr(frame.fmt9h.internal[2], str, 4));
-            debug_write("\r\nInternal Register #3: ");
-            debug_write(hexstr(frame.fmt9h.internal[3], str, 4));
+            debug_printf("Instruction Address: %08lX\n", frame.fmt9h.instr_addr);
+            debug_printf("Internal Register #0: %04X\n", frame.fmt9h.internal[0]);
+            debug_printf("Internal Register #1: %04X\n", frame.fmt9h.internal[1]);
+            debug_printf("Internal Register #2: %04X\n", frame.fmt9h.internal[2]);
+            debug_printf("Internal Register #3: %04X\n", frame.fmt9h.internal[3]);
             break;
         case 0xA:
         case 0xB:
@@ -138,36 +60,34 @@ void handle_error(struct reg_dump regs, struct stack_frame frame)
             break;
     }
 
-    debug_write("\r\n\r\nStack Trace:");
-    void* sp = (void*)regs.sp;
-    void* pc = (void*)frame.pc;
+    debug_write("\nStack Trace:\n");
+    void *sp = (void*)regs.sp;
+    void *pc = (void*)frame.pc;
     for (int i = 0; pc != NULL; i++) {
-        debug_write("\r\nStack Frame #");
-        str[0] = i + '0';
-        str[1] = 0;
-        debug_write(str);
-        debug_write(" (");
-        debug_write(hexstr((uint32_t)pc, str, 8));
-        debug_write("): ");
-        debug_write(hexstr((uint32_t)sp, str, 8));
+        debug_printf("Stack Frame #%d: PC=%p SP=%p\n", i, pc, sp);
+        void *ptr = (void*)((uint32_t)sp & 0xFFFFFFF0);
+        for (int i = 0; i < 4; i++) {
+            debug_printf("%08lX: ", (uint32_t)ptr);
+            for (int j = 0; j < 16; j++) {
+                debug_printf("%02X ", *(uint8_t*)ptr);
+                ptr = (uint8_t*)ptr + 1;
+            }
+            debug_write("\r\n");
+        }
         sp = (void*)*((uint32_t*)sp);
         pc = (void*)*((uint32_t*)sp + 1);
     }
 
-    debug_write("\r\n\r\nCode:");
+    debug_write("\nCode:\n");
     pc = (void*)(frame.pc & 0xFFFFFFF0);
     for (int i = 0; i < 4; i++) {
-        debug_write("\r\n");
-        debug_write(hexstr((uint32_t)pc, str, 8));
-        debug_write(": ");
-        str[2] = 0;
+        debug_printf("%08lX: ", (uint32_t)pc);
         for (int j = 0; j < 16; j++) {
-            debug_write(hexstr(*(uint8_t*)pc, str, 2));
-            debug_write(" ");
+            debug_printf("%02X ", *(uint8_t*)pc);
             pc = (uint8_t*)pc + 1;
         }
+        debug_write("\r\n");
     }
-    debug_write("\r\n");
 
     for (;;) {}
 }

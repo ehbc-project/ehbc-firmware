@@ -39,7 +39,7 @@ __init_arch::
     ; call main
     JSR         main
 
-    ; reachine here is not expected.
+    ; reaching here is not expected.
 .reset:
     RESET
     BRA         .reset
