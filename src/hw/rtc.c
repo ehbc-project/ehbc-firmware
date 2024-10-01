@@ -3,9 +3,9 @@
 */
 
 #include "hw/rtc.h"
-#include "memory.h"
-#include "macros.h"
 
+#include <string.h>
+#include <macros.h>
 #include "io.h"
 
 #define CMOS_INDEX        0x0070

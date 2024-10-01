@@ -1,12 +1,13 @@
 #include <assert.h>
 #include <stdio.h>
+#include <macros.h>
 
 #include "types.h"
-#include "macros.h"
 #include "hw/vga.h"
 #include "hw/ps2kbms.h"
 #include "hw/mc68681.h"
 #include "hw/rtc.h"
+#include "io.h"
 
 void main(void)
 {
@@ -63,6 +64,33 @@ void main(void)
         memtest_ptr = (void*)((uint32_t)memtest_ptr + 0x10000);
     }
 
+    io_write_8(0x1F6, 0xA0); // drive 0 
+    io_write_8(0x1F2, 0x00); // 0
+    io_write_8(0x1F3, 0x00); // 0
+    io_write_8(0x1F4, 0x00); // 0
+    io_write_8(0x1F5, 0x00); // 0
+    io_write_8(0x1F7, 0xEC); // identify device
+
+    //while (io_read_8(0x1F7) & 0x80) {} // read status
+
+    uint16_t *read_buf = (uint16_t*)0x10000;
+    for (int i = 0; i < 256; i++) {
+        *read_buf++ = io_read_16(0x1F0);
+    }
+
+    io_write_8(0x1F6, 0xA0); // drive 0 head 0
+    io_write_8(0x1F2, 0x01); // read 1 sector
+    io_write_8(0x1F3, 0x01); // sector 1
+    io_write_8(0x1F4, 0x00); // cylinder 0
+    io_write_8(0x1F5, 0x00); // cylinder 0
+    io_write_8(0x1F7, 0x20); // read
+
+    while (io_read_8(0x1F7) & 0x80) {} // read status
+
+    for (int i = 0; i < 256; i++) {
+        *read_buf++ = io_read_16(0x1F0);
+    }
+
     for (int i = 0; i < 1048576; i++) {}
 
     // start video mode tests
@@ -70,7 +98,7 @@ void main(void)
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
         0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x6A
     };
-    for (int i = 15; i < ARRAY_SIZE(video_modes); i++) {
+    for (int i = 3; i < 4; i++) {
         mode = vga_get_mode_info(video_modes[i]);
         if (vga_set_mode(video_modes[i])) {
             mc68681_tx(0, "Video mode not found\r\n");

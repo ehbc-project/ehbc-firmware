@@ -3,8 +3,10 @@
 */
 
 #include "hw/vga.h"
+
+#include <string.h>
+
 #include "hw/vgaregs.h"
-#include "memory.h"
 #include "io.h"
 
 #define VGA_MEMORY_BASE     0xFE0A0000

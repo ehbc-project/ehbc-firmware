@@ -3,8 +3,10 @@
 */
 
 #include "hw/ata.h"
-#include "memory.h"
-#include "macros.h"
+
+#include <string.h>
+#include <macros.h>
+
 
 struct ata_ioregs {
     hwreg8_t dr;

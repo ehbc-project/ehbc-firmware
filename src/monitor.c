@@ -1,6 +1,10 @@
 #include "types.h"
 #include "hw/mc68681.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
 int read_line(char *buf, int buflen)
 {
     int rxbyte, len = 0;
@@ -38,34 +42,18 @@ finish:
 void hexdump(const void* p, size_t len) {
     const uint8_t* bp = p;
 
+    char buf[12];
+
     for (int i = 0; i < len; i++) {
         if (!(i & 0xF)) {
-            mc68681_tx(0, "\r\n");
-
             uint32_t addr = (uint32_t)p;
             addr += i;
-            char buf[9];
-            for (int i = 7; i >= 0; i--) {
-                buf[i] = addr & 0xF;
-                buf[i] += (buf[i] > 9) ? 'A' - 10 : '0';
-                addr >>= 4;
-            }
-            buf[8] = 0;
-            
+            snprintf(buf, sizeof(buf), "\r\n%08lX ", addr);
             mc68681_tx(0, buf);
-            mc68681_tx_polled(0, ' ');
         }
 
-        char buf[3];
-        buf[0] = (*bp >> 4) & 0xF;
-        buf[0] += (buf[0] > 9) ? 'A' - 10 : '0';
-        buf[1] = *bp & 0xF;
-        buf[1] += (buf[1] > 9) ? 'A' - 10 : '0';
-        buf[2] = 0;
-        bp++;
-
+        snprintf(buf, sizeof(buf), "%02X ", *bp++);
         mc68681_tx(0, buf);
-        mc68681_tx_polled(0, ' ');
     }
     mc68681_tx(0, "\r\n");
 }
@@ -79,30 +67,30 @@ int parse_line(char *buf, int buflen)
     uint32_t start_addr = 0, addr = 0;
     for (int i = 0; i < buflen && buf[i]; i++) {
         // hexadecimal
-        if ('0' <= buf[i] && buf[i] <= '9') {
+        if (isdigit(buf[i])) {
             addr <<= 4;
             addr |= buf[i] - '0';
-        } else if ('A' <= buf[i] && buf[i] <= 'F') {
+        } else if (isxdigit(buf[i])) {
             addr <<= 4;
-            addr |= buf[i] - 'A' + 10;
-        } else if ('a' <= buf[i] && buf[i] <= 'f') {
-            addr <<= 4;
-            addr |= buf[i] - 'A' + 10;
+            if (isupper(buf[i])) {
+                addr |= buf[i] - 'A' + 10;
+            } else {
+                addr |= buf[i] - 'a' + 10;
+            }
         } else {
             switch (buf[i]) {
-                case '.':
+                case '.':  // dump multiple
                     start_addr = addr;
                     state = 1;
                     break;
-                case ':':
+                case ':':  // write to memory
                     start_addr = addr;
                     state = 2;
                     break;
-                case ' ':
+                case ' ':  // write to next memory
                     switch (state) {
                         case 0:
                             hexdump((void*)addr, 1);
-                            addr = 0;
                             break;
                         case 1:
                             if (addr < start_addr) {
@@ -111,24 +99,29 @@ int parse_line(char *buf, int buflen)
                             }
                             hexdump((void*)start_addr, addr - start_addr + 1);
                             state = 0;
-                            addr = 0;
                             break;
                         case 2:
                             *(uint8_t*)start_addr++ = addr;
-                            addr = 0;
                             break;
                         default:
                             break;
                     }
                     break;
-                case 'R':
+                case 'R':  // run address
                     ((void (*)(void))addr)();
                     break;
+                case '?':  // help
+                    state = 4;
+                    mc68681_tx(0, "<addr>               Dump a byte from given address\r\n");
+                    mc68681_tx(0, "<addr>.<addr>        Dump multiple bytes from given address range\r\n");
+                    mc68681_tx(0, "<addr>:<byte> ...    Write one or more byte to given address\r\n");
+                    mc68681_tx(0, "R<addr>              Jump and run code from given address\r\n");
+                    goto finish;
                 default:
                     mc68681_tx(0, "?UNKNOWN CHAR\r\n");
                     goto finish;
-                    break;
             }
+            addr = 0;
         }
     }
 

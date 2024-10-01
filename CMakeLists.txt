@@ -53,6 +53,7 @@ add_subdirectory(arch)
 add_subdirectory(src)
 add_subdirectory(rsrc)
 add_subdirectory(libehbcfw)
+add_subdirectory(examples)
 
 # Compile Options
 target_compile_features(firmware PUBLIC c_std_11)
@@ -67,9 +68,11 @@ target_compile_options(firmware PUBLIC
         -pedantic
         -pedantic-errors>)
 target_link_libraries(firmware gcc)
+target_link_libraries(firmware libehbcfw)
 
 target_include_directories(firmware PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_include_directories(firmware PUBLIC "${CMAKE_SOURCE_DIR}/src")
 target_include_directories(firmware PRIVATE "${CMAKE_BINARY_DIR}")
+target_include_directories(firmware PUBLIC libehbcfw)
 
 configure_file("config.h.in" "config.h")

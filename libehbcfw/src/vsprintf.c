@@ -6,8 +6,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <debug.h>
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#include <macros.h>
 
 #define SF_LEFT     0x01
 #define SF_PLUS     0x02

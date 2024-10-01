@@ -3,8 +3,9 @@
 */
 
 #include "hw/floppy.h"
-#include "memory.h"
-#include "macros.h"
+
+#include <string.h>
+#include <macros.h>
 
 static const struct floppy_info finfo_table[] = {
     // Unknown
