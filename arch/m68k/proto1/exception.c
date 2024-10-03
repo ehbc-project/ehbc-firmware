@@ -1,14 +1,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-void bus_error();
-void address_error();
-void other_exception();
+void error_handler();
+void trap0_handler();
 
 __attribute__((interrupt_handler))
-static void divide_by_zero()
+static void unimplemented_instruction()
 {
-    
+
 }
 
 __attribute__((interrupt_handler))
@@ -24,37 +23,7 @@ static void trace()
 }
 
 __attribute__((interrupt_handler))
-static void coproc_protocol_error()
-{
-
-}
-
-__attribute__((interrupt_handler))
-static void spurious_interrupt()
-{
-
-}
-
-__attribute__((interrupt_handler))
 static void interrupt_autovector()
-{
-
-}
-
-__attribute__((interrupt_handler))
-static void trap_instruction()
-{
-
-}
-
-__attribute__((interrupt_handler))
-static void fpu_exception()
-{
-
-}
-
-__attribute__((interrupt_handler))
-static void mmu_exception()
 {
 
 }
@@ -62,27 +31,34 @@ static void mmu_exception()
 void (*exception_vector[256])() = {
     NULL,
     NULL,
-    bus_error,
-    address_error,
-    other_exception,
-    divide_by_zero,
+    error_handler,
+    error_handler,
+
+    error_handler,
+    error_handler,
     chk_instruction,
-    trap_instruction,
-    other_exception,
+    NULL,
+
+    error_handler,
     trace,
+    unimplemented_instruction,
+    unimplemented_instruction,
+
     NULL,
-    other_exception,
-    other_exception,
-    coproc_protocol_error,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    error_handler,
+    error_handler,
+    error_handler,
+
     NULL,
     NULL,
-    spurious_interrupt,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+
+    error_handler,
     interrupt_autovector,
     interrupt_autovector,
     interrupt_autovector,
@@ -90,29 +66,31 @@ void (*exception_vector[256])() = {
     interrupt_autovector,
     interrupt_autovector,
     interrupt_autovector,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    trap_instruction,
-    fpu_exception,
-    fpu_exception,
-    fpu_exception,
-    fpu_exception,
-    fpu_exception,
-    fpu_exception,
-    fpu_exception,
-    fpu_exception,
-    mmu_exception,
+
+    trap0_handler,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    
+    error_handler,
+    error_handler,
+    error_handler,
+    error_handler,
+    error_handler,
+    error_handler,
+    error_handler,
+    error_handler,
+    error_handler,
 };

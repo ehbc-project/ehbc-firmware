@@ -21,7 +21,7 @@ struct mc68681_regs {
     union { hwreg8_t ip, opcr; };
 } __attribute__((packed));
 
-static struct mc68681_regs* mc68681 = (void*)0xFF000200;
+static struct mc68681_regs* const mc68681 = (void*)0xFF000200;
 
 int mc68681_init()
 {

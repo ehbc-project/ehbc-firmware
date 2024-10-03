@@ -5,7 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 
-int read_line(char *buf, int buflen)
+static int read_line(char *buf, int buflen)
 {
     int rxbyte, len = 0;
 
@@ -39,7 +39,7 @@ finish:
     return len;
 }
 
-void hexdump(const void* p, size_t len) {
+static void hexdump(const void* p, size_t len) {
     const uint8_t* bp = p;
 
     char buf[12];
@@ -58,7 +58,7 @@ void hexdump(const void* p, size_t len) {
     mc68681_tx(0, "\r\n");
 }
 
-int parse_line(char *buf, int buflen)
+static int parse_line(char *buf, int buflen)
 {
     // state 0: get start address
     // state 1: get address

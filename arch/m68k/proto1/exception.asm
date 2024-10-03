@@ -1,11 +1,10 @@
     ORG         0
 
-    PUBLIC      handle_error
+    PUBLIC      system_dump
+    PUBLIC      syscall_handler
 
     SECTION     .text
-bus_error:: 
-address_error::
-other_exception::
+error_handler::
     ; set frame pointer
     MOVEA.L     SP,A6
 
@@ -41,7 +40,27 @@ other_exception::
 .sp_end:
     MOVE.L      A0,-(SP)
 
-    ; jump to error handler
-    JSR         handle_error
+    ; dump system status
+    JSR         system_dump
 
-    RTS
+    RTE
+
+trap0_handler::
+    ; set frame pointer
+    LINK.W      A6,#0
+
+    ; dump registers
+    MOVE.L      A1,-(SP)
+    MOVE.L      A0,-(SP)
+    MOVE.L      D2,-(SP)
+    MOVE.L      D1,-(SP)
+    MOVE.L      D0,-(SP)
+
+    ; jump to error handler
+    JSR         syscall_handler
+
+    ADDA.L      #20,SP
+
+    UNLK        A6
+
+    RTE

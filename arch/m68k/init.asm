@@ -10,7 +10,7 @@ __init_arch::
 .loop_bss:
     CMPA.L      A1,A0
     BGE         .end_bss
-    CLR.L       (A1)+
+    CLR.L       (A0)+
     BRA         .loop_bss
 .end_bss:  
 

@@ -3,10 +3,28 @@
 
 #include <stddef.h>
 
+void *memmove(void *dest, const void *src, size_t len);  // not implemented yet
+void *memcmp(const void *p1, const void *p2, size_t len);  // not implemented yet
+void *memchr(const void *ptr, int value, size_t len);  // not implemented yet
 void *memset(void *dest, int c, size_t count);
 void *memset16(void *dest, int c, size_t count);
 void *memcpy(void *dest, const void *src, size_t len);
 
+char *strncat(char *dest, const char *src, size_t maxlen);  // not implemented yet
+char *strcat(char *dest, const char *src);  // not implemented yet
+char *strncpy(char *dest, const char *src, size_t maxlen);  // not implemented yet
+char *strcpy(char *dest, const char *src);  // not implemented yet
+int strncmp(const char *p1, const char *p2, size_t maxlen);  // not implemented yet
+int strcmp(const char *p1, const char *p2);  // not implemented yet
+int strncasecmp(const char *p1, const char *p2, size_t maxlen);  // not implemented yet
+int strcasecmp(const char *p1, const char *p2);  // not implemented yet
+char *strchr(const char *str, int chr);  // not implemented yet
+char *strrchr(const char *str, int chr);  // not implemented yet
+char *strstr(const char *str, const char *substr);  // not implemented yet
+size_t strcspn(const char *p1, const char *p2);  // not implemented yet
+size_t strspn(const char *p1, const char *p2);  // not implemented yet
+char *strpbrk(const char *p1, const char *p2);  // not implemented yet
+char *strtok(char *str, const char *delim);  // not implemented yet
 size_t strnlen(const char *str, size_t maxlen);
 size_t strlen(const char *str);
 

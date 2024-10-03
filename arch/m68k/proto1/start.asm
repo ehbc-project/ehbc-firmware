@@ -1,13 +1,18 @@
     ORG         0
 
     PUBLIC      __init_arch
+    PUBLIC      __istack_end
     PUBLIC      __stack_end
     PUBLIC      exception_vector
 
     SECTION     .text.startup
 _start::
-    LEA         __stack_end,SP          ; Configure Stack Pointer
-    MOVEA.L     SP,A6                   ; Configure Frame Pointer
+    LEA         __istack_end,SP         ; interrupt stack pointer
+
+    ORI.W       #$1000,SR               ; switch to master state
+
+    LEA         __stack_end,SP          ; master stack pointer
+    MOVEA.L     SP,A6                   ; frame pointer
 
     ; init memory
 

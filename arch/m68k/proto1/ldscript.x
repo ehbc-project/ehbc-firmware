@@ -7,15 +7,26 @@ MEMORY
 {
     RAM(rw)     : ORIGIN = 0x00000000, LENGTH = 4032M
     FLASH(rx)   : ORIGIN = 0xFD000000, LENGTH = 16M
-    ISAIO(rw)   : ORIGIN = 0xFE000000, LENGTH = 1K
-    ISAMEM(rw)  : ORIGIN = 0xFE000400, LENGTH = 16M - 1K
+    ISAIO(rw)   : ORIGIN = 0xFE000000, LENGTH = 64K
+    ISAMEM(rw)  : ORIGIN = 0xFE001000, LENGTH = 16M - 64K
     MMIO(rw)    : ORIGIN = 0xFF000000, LENGTH = 16M
 }
 
 PROVIDE_HIDDEN(__stack_size = 16K);
+PROVIDE_HIDDEN(__istack_size = 16K);
 
 SECTIONS
 {
+    .stack ALIGN(16) :
+    {
+        PROVIDE_HIDDEN(__stack_start = .);
+        . = __stack_size;
+        PROVIDE_HIDDEN(__stack_end = .);
+        PROVIDE_HIDDEN(__istack_start = .);
+        . = __stack_size + __istack_size;
+        PROVIDE_HIDDEN(__istack_end = .);
+    }
+
     .text :
     {
         KEEP(*(.text.startup .text.startup.*))
@@ -37,13 +48,6 @@ SECTIONS
         *(COMMON)
         PROVIDE_HIDDEN(__bss_end = .);
     } >RAM
-
-    .stack ALIGN(16) :
-    {
-        PROVIDE_HIDDEN(__stack_start = .);
-        . = __stack_size;
-        PROVIDE_HIDDEN(__stack_end = .);
-    }
 
     .ctors :
     {

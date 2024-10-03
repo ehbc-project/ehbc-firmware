@@ -17,6 +17,11 @@ find_program(CMAKE_CXX_COMPILER
 set(CMAKE_CXX_COMPILER_TARGET   m68k-unknown-elf)
 set(CMAKE_CXX_FLAGS             "${CMAKE_CXX_FLAGS} -ffreestanding -nostdlib -march=68030 -m68881")
 
+find_program(CMAKE_ASM_VASM_COMPILER
+    "vasmm68k_mot"
+    HINTS "/usr" "/usr/local" "/opt/homebrew" ENV PATH
+    REQUIRED)
+set(CMAKE_ASM_VASM_COMPILER_TARGET   m68k-unknown-elf)
 set(CMAKE_ASM_VASM_FLAGS             "${CMAKE_ASM_VASM_FLAGS} -m68030 -m68882")
 
 set(_BINUTILS_LIST AR;NM;OBJCOPY;OBJDUMP;RANLIB;READELF;STRIP)
