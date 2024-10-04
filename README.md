@@ -9,5 +9,5 @@ cmake -S. -Bbuild
 cmake --build build
 ```
 
-To emulate firmware, download and build MAME from [here](https://github.com/ehbc-proect/ehbc-mame).
+To emulate firmware, download and build MAME from [here](https://github.com/ehbc-project/ehbc-mame).
 The path of the ROM image is: `build/firmware.bin`
