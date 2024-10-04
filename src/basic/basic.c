@@ -22,7 +22,7 @@ struct program_line {
 
 static struct program_line *line_head = NULL;
 
-int create_prog_line(unsigned int line_num, const char *str)
+static int create_prog_line(unsigned int line_num, const char *str)
 {
     struct program_line *current, *next, *prev;
     unsigned int line_len = strnlen(str, MAX_LINE);
@@ -65,7 +65,7 @@ int create_prog_line(unsigned int line_num, const char *str)
     return 0;
 }
 
-struct program_line *find_prog_line(unsigned int line_num)
+static struct program_line *find_prog_line(unsigned int line_num)
 {
     struct program_line *current = line_head, *next;
 
@@ -86,7 +86,7 @@ struct program_line *find_prog_line(unsigned int line_num)
     return NULL;
 }
 
-int edit_prog_line(unsigned int line_num, const char *str)
+static int edit_prog_line(unsigned int line_num, const char *str)
 {
     struct program_line *line = find_prog_line(line_num);
     if (!line) {
@@ -539,7 +539,7 @@ static int parse_command(void)
 ////////////////////////////////////////////////////////////////////////////////
 // user interface section
 
-int read_line(char *buf, int buflen)
+static int read_line(char *buf, int buflen)
 {
     int rxbyte, len = 0;
 

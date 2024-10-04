@@ -5,24 +5,10 @@
 
     SECTION     .text
 error_handler::
-    ; set frame pointer
-    MOVEA.L     SP,A6
+    LINK.W      A6,#0
 
     ; dump registers
-    MOVE.L      A5,-(SP)
-    MOVE.L      A4,-(SP)
-    MOVE.L      A3,-(SP)
-    MOVE.L      A2,-(SP)
-    MOVE.L      A1,-(SP)
-    MOVE.L      A0,-(SP)
-    MOVE.L      D7,-(SP)
-    MOVE.L      D6,-(SP)
-    MOVE.L      D5,-(SP)
-    MOVE.L      D4,-(SP)
-    MOVE.L      D3,-(SP)
-    MOVE.L      D2,-(SP)
-    MOVE.L      D1,-(SP)
-    MOVE.L      D0,-(SP)
+    MOVEM.L     D0-D7/A0-A5,-(SP)
 
     ; get stack pointer
     MOVE.W      (56,SP),D0
@@ -43,24 +29,16 @@ error_handler::
     ; dump system status
     JSR         system_dump
 
+    ; should not reach here
+    UNLK        A6
     RTE
 
 trap0_handler::
-    ; set frame pointer
     LINK.W      A6,#0
 
-    ; dump registers
-    MOVE.L      A1,-(SP)
-    MOVE.L      A0,-(SP)
-    MOVE.L      D2,-(SP)
-    MOVE.L      D1,-(SP)
-    MOVE.L      D0,-(SP)
-
-    ; jump to error handler
+    MOVEM.L     D0-D4,-(SP)
     JSR         syscall_handler
 
     ADDA.L      #20,SP
-
     UNLK        A6
-
     RTE

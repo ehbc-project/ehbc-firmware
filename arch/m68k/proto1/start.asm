@@ -7,6 +7,10 @@
 
     SECTION     .text.startup
 _start::
+    BRA         start
+
+    SECTION     .text
+start:
     LEA         __istack_end,SP         ; interrupt stack pointer
 
     ORI.W       #$1000,SR               ; switch to master state

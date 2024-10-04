@@ -15,14 +15,11 @@ static int read_line(char *buf, int buflen)
 
         switch (rxbyte) {
             case '\r':
-                mc68681_tx(0, "\r\n");
+                printf("\r\n");
                 goto finish;
-                break;
             case '\b':
                 if (len > 0) {
-                    mc68681_tx_polled(0, '\b');
-                    mc68681_tx_polled(0, ' ');
-                    mc68681_tx_polled(0, '\b');
+                    printf("\b \b");
                     *--buf = 0;
                     len--;
                 }
@@ -42,20 +39,16 @@ finish:
 static void hexdump(const void* p, size_t len) {
     const uint8_t* bp = p;
 
-    char buf[12];
-
     for (int i = 0; i < len; i++) {
         if (!(i & 0xF)) {
             uint32_t addr = (uint32_t)p;
             addr += i;
-            snprintf(buf, sizeof(buf), "\r\n%08lX ", addr);
-            mc68681_tx(0, buf);
+            printf("\r\n%08lX ", addr);
         }
 
-        snprintf(buf, sizeof(buf), "%02X ", *bp++);
-        mc68681_tx(0, buf);
+        printf("%02X ", *bp++);
     }
-    mc68681_tx(0, "\r\n");
+    printf("\r\n");
 }
 
 static int parse_line(char *buf, int buflen)
@@ -63,6 +56,7 @@ static int parse_line(char *buf, int buflen)
     // state 0: get start address
     // state 1: get address
     // state 2: get bytes
+    // state 3: jump to address
     int state = 0;
     uint32_t start_addr = 0, addr = 0;
     for (int i = 0; i < buflen && buf[i]; i++) {
@@ -94,7 +88,7 @@ static int parse_line(char *buf, int buflen)
                             break;
                         case 1:
                             if (addr < start_addr) {
-                                mc68681_tx(0, "?ERROR\r\n");
+                                printf("?ERROR\r\n");
                                 break;
                             }
                             hexdump((void*)start_addr, addr - start_addr + 1);
@@ -108,17 +102,17 @@ static int parse_line(char *buf, int buflen)
                     }
                     break;
                 case 'R':  // run address
-                    ((void (*)(void))addr)();
+                    state = 3;
                     break;
                 case '?':  // help
                     state = 4;
-                    mc68681_tx(0, "<addr>               Dump a byte from given address\r\n");
-                    mc68681_tx(0, "<addr>.<addr>        Dump multiple bytes from given address range\r\n");
-                    mc68681_tx(0, "<addr>:<byte> ...    Write one or more byte to given address\r\n");
-                    mc68681_tx(0, "R<addr>              Jump and run code from given address\r\n");
+                    printf("<addr>               Dump a byte from given address\r\n");
+                    printf("<addr>.<addr>        Dump multiple bytes from given address range\r\n");
+                    printf("<addr>:<byte> ...    Write one or more byte to given address\r\n");
+                    printf("R<addr>              Jump and run code from given address\r\n");
                     goto finish;
                 default:
-                    mc68681_tx(0, "?UNKNOWN CHAR\r\n");
+                    printf("?UNKNOWN CHAR\r\n");
                     goto finish;
             }
             addr = 0;
@@ -132,7 +126,7 @@ static int parse_line(char *buf, int buflen)
                 break;
             case 1:
                 if (addr < start_addr) {
-                    mc68681_tx(0, "?ERROR\r\n");
+                    printf("?ERROR\r\n");
                     break;
                 }
                 hexdump((void*)start_addr, addr - start_addr + 1);
@@ -141,8 +135,11 @@ static int parse_line(char *buf, int buflen)
             case 2:
                 *(uint8_t*)start_addr++ = addr;
                 break;
+            case 3:
+                ((void (*)(void))addr)();
+                break;
             default:
-                mc68681_tx(0, "?UNKNOWN CHAR\r\n");
+                printf("?UNKNOWN CHAR\r\n");
                 break;
         }
     }
@@ -155,7 +152,7 @@ void run_monitor(void)
 {
     for (;;) {
         char linebuf[128];
-        mc68681_tx(0, "> ");
+        printf("> ");
         parse_line(linebuf, read_line(linebuf, sizeof(linebuf)));
     }
 }

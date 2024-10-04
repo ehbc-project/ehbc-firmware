@@ -74,8 +74,6 @@ void main(void)
         memtest_ptr = (void*)((uint32_t)memtest_ptr + 0x10000);
     }
 
-    for (int i = 0; i < 1048576; i++) {}
-
-    extern void run_basic(void);
-    run_basic();
+    extern void run_monitor(void);
+    run_monitor();
 }

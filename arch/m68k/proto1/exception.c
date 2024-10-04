@@ -1,5 +1,9 @@
+#include "exception.h"
+
 #include <stdint.h>
 #include <stddef.h>
+
+#define FUNC(f) ((void*)(long)(f))
 
 void error_handler();
 void trap0_handler();
@@ -17,6 +21,12 @@ static void chk_instruction()
 }
 
 __attribute__((interrupt_handler))
+static void misc_trap_instruction()
+{
+
+}
+
+__attribute__((interrupt_handler))
 static void trace()
 {
 
@@ -25,72 +35,48 @@ static void trace()
 __attribute__((interrupt_handler))
 static void interrupt_autovector()
 {
-
+    int asdf = 0;
 }
 
-void (*exception_vector[256])() = {
-    NULL,
-    NULL,
-    error_handler,
-    error_handler,
+struct exception_vector exception_vector = {
+    .bus_error =                    FUNC(error_handler),
+    .addr_error =                   FUNC(error_handler),
 
-    error_handler,
-    error_handler,
-    chk_instruction,
-    NULL,
+    .illegal_instr =                FUNC(error_handler),
+    .divzero =                      FUNC(error_handler),
+    .chk_instr =                    FUNC(chk_instruction),
+    .misc_trap_instr =              FUNC(misc_trap_instruction),
 
-    error_handler,
-    trace,
-    unimplemented_instruction,
-    unimplemented_instruction,
+    .privilege_violation =          FUNC(error_handler),
+    .trace =                        FUNC(trace),
+    .line_1010 =                    FUNC(unimplemented_instruction),
+    .line_1111 =                    FUNC(unimplemented_instruction),
 
-    NULL,
-    error_handler,
-    error_handler,
-    error_handler,
+    .coproc_protocol_violation =    FUNC(error_handler),
+    .format_error =                 FUNC(error_handler),
+    .uninitialized_interrupt =      FUNC(error_handler),
 
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    .spurious_interrupt =           FUNC(error_handler),
+    .autovector1 =                  FUNC(interrupt_autovector),
+    .autovector2 =                  FUNC(interrupt_autovector),
+    .autovector3 =                  FUNC(interrupt_autovector),
+    .autovector4 =                  FUNC(interrupt_autovector),
+    .autovector5 =                  FUNC(interrupt_autovector),
+    .autovector6 =                  FUNC(interrupt_autovector),
+    .autovector7 =                  FUNC(interrupt_autovector),
 
-    error_handler,
-    interrupt_autovector,
-    interrupt_autovector,
-    interrupt_autovector,
-    interrupt_autovector,
-    interrupt_autovector,
-    interrupt_autovector,
-    interrupt_autovector,
-
-    trap0_handler,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    .trap0 =                        FUNC(trap0_handler),
     
-    error_handler,
-    error_handler,
-    error_handler,
-    error_handler,
-    error_handler,
-    error_handler,
-    error_handler,
-    error_handler,
-    error_handler,
+    .fpcp_bra_set_unordered =       FUNC(error_handler),
+    .fpcp_inexact =                 FUNC(error_handler),
+    .fpcp_divzero =                 FUNC(error_handler),
+    .fpcp_underflow =               FUNC(error_handler),
+    .fpcp_operand_error =           FUNC(error_handler),
+    .fpcp_overflow =                FUNC(error_handler),
+    .fpcp_signaling_nan =           FUNC(error_handler),
+    .fpcp_unimpl_data_type =        FUNC(error_handler),
+
+    .mmu_config_error =             FUNC(error_handler),
+    .mmu_illegal_op_error =         FUNC(error_handler),
+    .mmu_access_violation =         FUNC(error_handler),
 };

@@ -1,8 +1,6 @@
 #include <stdio.h>
 
-#include <stdint.h>
-
-extern void do_system_call(uint32_t d0, uint32_t d1);
+#include "libehbcfw/syscall.h"
 
 int printf(const char *fmt, ...)
 {
@@ -14,7 +12,7 @@ int printf(const char *fmt, ...)
     va_end(args);
 
     for (int i = 0; i < sizeof(buf) && buf[i]; i++) {
-        do_system_call(2, buf[i]);
+        ehbcfw_aio_wait_tx(0, buf[i]);
     }
     return ret;
 }

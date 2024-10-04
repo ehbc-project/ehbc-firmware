@@ -19,17 +19,6 @@ enable_language(C ASM_VASM)
 # Target Configurations
 add_executable(firmware)
 set_target_properties(firmware PROPERTIES SUFFIX ".elf")
-add_custom_command(TARGET firmware POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary "$<TARGET_FILE:firmware>" firmware.bin
-    BYPRODUCTS firmware.bin
-    COMMENT "Creating binary file")
-
-add_custom_target(elfinfo ALL
-    COMMAND ${CMAKE_OBJDUMP} -sSxr "$<TARGET_FILE:firmware>" > firmware.objdump
-    DEPENDS firmware
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    COMMENT "Creating ELF analysis"
-    USES_TERMINAL)
 
 # Compiler Tests
 if (NOT DEFINED CMAKE_C_BYTE_ORDER)
@@ -54,6 +43,7 @@ add_subdirectory(src)
 add_subdirectory(rsrc)
 add_subdirectory(libehbcfw)
 add_subdirectory(examples)
+add_subdirectory(utils)
 
 # Compile Options
 target_compile_features(firmware PUBLIC c_std_11)
@@ -76,3 +66,24 @@ target_include_directories(firmware PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(firmware PUBLIC libehbcfw)
 
 configure_file("config.h.in" "config.h")
+
+# Additional Targets
+add_custom_target(romfs_image ALL
+    COMMAND "${CMAKE_BINARY_DIR}/utils/romfs/mkromfs"
+    DEPENDS util_romfs
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Creating ROM filesystem image")
+add_dependencies(firmware romfs_image)
+
+add_custom_target(rom_image ALL
+    COMMAND ${CMAKE_OBJCOPY} -O binary "$<TARGET_FILE:firmware>" firmware.bin
+    DEPENDS firmware
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Creating binary file")
+
+add_custom_target(elfinfo ALL
+    COMMAND ${CMAKE_OBJDUMP} -xdS "$<TARGET_FILE:firmware>" > firmware.objdump
+    DEPENDS firmware
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Creating ELF analysis"
+    USES_TERMINAL)

@@ -1,6 +1,8 @@
 #ifndef __SYSCALL_H__
 #define __SYSCALL_H__
 
+#include "arch-syscall.h"
+
 void ehbcfw_boot_next(void);
 int ehbcfw_deinitialize(void);
 
@@ -67,8 +69,24 @@ const struct ehbcfw_vmode_param_table *ehbcfw_video_get_status(void);
 void ehbcfw_video_set_cursor_shape(int shape);
 void ehbcfw_video_set_cursor_pos(int row, int col);
 void ehbcfw_video_get_cursor(int *shape, int *row, int *col);
-void ehbcfw_scroll_area(int count, int attr, int upper_row, int lower_row, int left_col, int right_col);
+void ehbcfw_video_scroll_area(int count, int attr, int upper_row, int lower_row, int left_col, int right_col);
+void ehbcfw_video_read_char_attr(int *ch, int *attr);
+void ehbcfw_video_write_char_attr(int ch, int attr);
+void ehbcfw_video_write_string(const char *str, unsigned int len, int flags);
+void ehbcfw_video_write_ansi_tty(const char *str, unsigned int len);
+void ehbcfw_video_load_text_font(void *data);
+void ehbcfw_video_load_palette(void *data, unsigned int size);
 
+struct ehbcfw_drive_param_table {
+    int id;
+};
 
+void ehbcfw_storage_reset(int id);
+int ehbcfw_storage_get_status(int id);
+const struct ehbcfw_drive_param_table *ehbcfw_storage_get_param_table(int id);
+int ehbcfw_storage_read_sectors_chs(int id, int head, int cylinder, int sector, int count, void *buf);
+int ehbcfw_storage_write_sectors_chs(int id, int head, int cylinder, int sector, int count, const void *buf);
+int ehbcfw_storage_read_sectors_lba(int id, long long lba, int count, void *buf);
+int ehbcfw_storage_write_sectors_lba(int id, long long lba, int count, const void *buf);
 
 #endif // __SYSCALL_H__
