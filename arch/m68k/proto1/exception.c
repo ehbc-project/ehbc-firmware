@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "hw/mc68681.h"
+
 #define FUNC(f) ((void*)(long)(f))
 
 void error_handler();
@@ -29,7 +31,7 @@ static void trace()
 __attribute__((interrupt_handler))
 static void interrupt_autovector()
 {
-    int asdf = 0;
+    mc68681_irq_handler();
 }
 
 struct exception_vector exception_vector = {

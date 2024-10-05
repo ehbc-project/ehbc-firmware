@@ -1,7 +1,7 @@
 #ifndef __SYSCALL_H__
 #define __SYSCALL_H__
 
-#include "arch-syscall.h"
+#include <arch-syscall.h>
 
 void ehbcfw_boot_next(void);
 int ehbcfw_deinitialize(void);
@@ -50,6 +50,7 @@ int ehbcfw_aio_tx(int port, char ch);
 int ehbcfw_aio_wait_rx(int port, char *buf);
 int ehbcfw_aio_rx(int port, char *buf);
 int ehbcfw_aio_get_status(int port, int *status);
+int ehbcfw_aio_tx_string(int port, const char *str, unsigned long len);
 
 enum ehbcfw_vmode_type {
     VT_TEXT = 0, VT_CGA, VT_PLANAR, VT_PACKED, VT_DIRECT

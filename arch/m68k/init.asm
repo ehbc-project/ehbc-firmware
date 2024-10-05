@@ -36,6 +36,8 @@ __init_arch::
     BRA         .loop_ctors
 .end_ctors:
 
+    ANDI.W      #$F1FF,SR               ; enable interrupt
+
     ; call main
     JSR         main
 

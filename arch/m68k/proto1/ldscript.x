@@ -25,7 +25,15 @@ SECTIONS
         PROVIDE_HIDDEN(__istack_start = .);
         . = __stack_size + __istack_size;
         PROVIDE_HIDDEN(__istack_end = .);
-    }
+    } >RAM
+
+    .bss ALIGN(4) :
+    {
+        PROVIDE_HIDDEN(__bss_start = .);
+        *(.bss .bss.*)
+        *(COMMON)
+        PROVIDE_HIDDEN(__bss_end = .);
+    } >RAM
 
     .text :
     {
@@ -41,13 +49,33 @@ SECTIONS
         PROVIDE_HIDDEN(__data_init_end = .);
     } >RAM AT >FLASH
 
-    .bss ALIGN(4) :
+    .init :
     {
-        PROVIDE_HIDDEN(__bss_start = .);
-        *(.bss .bss.*)
-        *(COMMON)
-        PROVIDE_HIDDEN(__bss_end = .);
-    } >RAM
+        KEEP(*(SORT_NONE(.init)))
+    } >FLASH
+
+    .fini :
+    {
+        KEEP(*(SORT_NONE(.fini)))
+    } >FLASH
+
+    . = ALIGN(4);
+    .init_array :
+    {
+        PROVIDE_HIDDEN(__init_array_start = .);
+        KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+        KEEP(*(.init_array .ctors))
+        PROVIDE_HIDDEN(__init_array_end = .);
+    } >FLASH
+
+    . = ALIGN(4);
+    .fini_array :
+    {
+        PROVIDE_HIDDEN(__fini_array_start = .);
+        KEEP(*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
+        KEEP(*(.fini_array .dtors))
+        PROVIDE_HIDDEN(__fini_array_end = .);
+    } >FLASH
 
     .ctors :
     {
@@ -60,24 +88,6 @@ SECTIONS
         KEEP(*(SORT(.dtors.*)))
         KEEP(*(.dtors))
     } >FLASH
-
-    .init_array ALIGN(4) :
-    {
-        PROVIDE_HIDDEN(__init_array_start = .);
-        KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
-        KEEP(*(.init_array .ctors))
-
-        PROVIDE_HIDDEN(__init_array_end = .);
-    }
-
-    .fini_array ALIGN(4) :
-    {
-        PROVIDE_HIDDEN(__fini_array_start = .);
-        KEEP(*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
-        KEEP(*(.fini_array .dtors))
-
-        PROVIDE_HIDDEN(__fini_array_end = .);
-    }
 
     .rodata :
     {

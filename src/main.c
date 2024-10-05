@@ -30,7 +30,9 @@
 
 void main(void)
 {
-    if (!mc68681_init() && !mc68681_set_param(0, 9600, 9600, 8, PM_NONE, SB_1)) {
+    if (!mc68681_init() &&
+        !mc68681_set_param(0,
+            AIO_BAUD_9600, AIO_BAUD_9600, 8, AIO_PM_NONE, AIO_SB_1)) {
         mc68681_enable(0, 1, 1);
         mc68681_tx(0, "DUART OK\r\n");
     }

@@ -10,7 +10,7 @@ static int read_line(char *buf, int buflen)
     int rxbyte, len = 0;
 
     do {
-        rxbyte = mc68681_rx_polled(0);
+        rxbyte = mc68681_read_byte(0);
         if (rxbyte < 0) break;
 
         switch (rxbyte) {
@@ -25,7 +25,7 @@ static int read_line(char *buf, int buflen)
                 }
                 break;
             default:
-                mc68681_tx_polled(0, rxbyte);
+                mc68681_write_byte(0, rxbyte);
                 *buf++ = rxbyte;
                 len++;
         }
