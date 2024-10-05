@@ -19,6 +19,15 @@
 #define FDC_DIR     0x3F7
 #define FDC_CCR     0x3F7
 
+#define CMD_SPECIFY 0x03
+#define CMD_WRITE   0x05
+#define CMD_READ    0x06
+#define CMD_RECALIB 0x07
+#define CMD_SENSE   0x08
+#define CMD_SEEK    0x09
+
+
+
 void main(void)
 {
     if (!mc68681_init() && !mc68681_set_param(0, 9600, 9600, 8, PM_NONE, SB_1)) {

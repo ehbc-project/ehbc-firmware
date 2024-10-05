@@ -167,6 +167,9 @@ int mc68681_set_param(
     *csr = val;
     mc68681->acr = 0x80;
 
+    mc68681->isr = 0x22;  // irq when rxrdy
+    mc68681->imr = 0x22;
+
     return 0;
 }
 

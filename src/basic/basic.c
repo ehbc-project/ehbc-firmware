@@ -603,6 +603,7 @@ void run_basic(void)
 {
     mpool_init((void*)0x10000, 65536);
 
+    printf("BASIC Interpreter\r\n");
     printf("%lu BYTES FREE\r\n", mpool_getfree());
 
     char linebuf[128];

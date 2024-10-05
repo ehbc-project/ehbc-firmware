@@ -9,12 +9,6 @@ void error_handler();
 void trap0_handler();
 
 __attribute__((interrupt_handler))
-static void unimplemented_instruction()
-{
-
-}
-
-__attribute__((interrupt_handler))
 static void chk_instruction()
 {
 
@@ -49,8 +43,8 @@ struct exception_vector exception_vector = {
 
     .privilege_violation =          FUNC(error_handler),
     .trace =                        FUNC(trace),
-    .line_1010 =                    FUNC(unimplemented_instruction),
-    .line_1111 =                    FUNC(unimplemented_instruction),
+    .line_1010 =                    FUNC(error_handler),
+    .line_1111 =                    FUNC(error_handler),
 
     .coproc_protocol_violation =    FUNC(error_handler),
     .format_error =                 FUNC(error_handler),
