@@ -2,27 +2,34 @@
 #define HW_MC68681_H__
 
 #include "types.h"
+#include "ringbuf.h"
 
 #include <libehbcfw/syscall.h>
+#include <libehbcfw/device.h>
 
-int mc68681_init();
-int mc68681_set_param(
-    int ch, enum ehbcfw_aio_baud txbaud, enum ehbcfw_aio_baud rxbaud,
-    int bpc,
-    enum ehbcfw_aio_parity_mode pmode,
-    enum ehbcfw_aio_stop_bits sbmode);
-void mc68681_enable(int ch, int txenable, int rxenable);
-void mc68681_disable(int ch);
+struct device_mc68681 {
+    void *mmio_base;
+    struct ringbuf8 *cha_rxbuf, *cha_txbuf;
+    struct ringbuf8 *chb_rxbuf, *chb_txbuf;
+    uint8_t imr;
+};
 
-void mc68681_irq_handler(void);
+const char *mc68681_get_name(struct device *dev);
+const char *mc68681_get_vendor(struct device *dev);
 
-int mc68681_tx_polled(int ch, uint8_t chr);
-int mc68681_tx(int ch, const char* str);
-int mc68681_txn(int ch, const char* str, unsigned long len);
+void mc68681_irq_handler(struct device *dev);
 
-int mc68681_rx_polled(int ch);
+int mc68681_probe(struct device *dev);
 
-int mc68681_read_byte(int ch);
-void mc68681_write_byte(int ch, uint8_t chr);
+int mc68681_cha_reset(struct device *dev);
+int mc68681_chb_reset(struct device *dev);
+
+int mc68681_cha_set_param(struct device *dev, struct ehbcfw_aio_param param);
+int mc68681_chb_set_param(struct device *dev, struct ehbcfw_aio_param param);
+
+int mc68681_cha_read_byte(struct device *dev);
+int mc68681_chb_read_byte(struct device *dev);
+int mc68681_cha_write_byte(struct device *dev, uint8_t chr);
+int mc68681_chb_write_byte(struct device *dev, uint8_t chr);
 
 #endif  // HW_MC68681_H__

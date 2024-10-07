@@ -28,10 +28,12 @@ static void trace()
 
 }
 
+extern struct device *const mc68681_device;
+
 __attribute__((interrupt_handler))
 static void interrupt_autovector()
 {
-    mc68681_irq_handler();
+    mc68681_irq_handler(mc68681_device);
 }
 
 struct exception_vector exception_vector = {

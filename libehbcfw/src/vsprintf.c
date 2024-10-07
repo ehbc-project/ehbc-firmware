@@ -312,22 +312,22 @@ static int print_char(char *buf, size_t len, struct fmt_spec spec, va_list *args
     }
 
     // calc width
-    if (spec.width > len) {
-        spec.width = len;
+    if (len > spec.width) {
+        len = spec.width;
     }
 
     // print
-    if (spec.width > 0 && left) {
+    if (len && left) {
         *buf++ = ch;
-        spec.width--;
+        len--;
         char_cnt++;
     }
-    while (spec.width > 0) {
+    while (left ? len : len - 1) {
         *buf++ = ' ';
-        spec.width--;
+        len--;
         char_cnt++;
     }
-    if (spec.width > 0 && !left) {
+    if (len && !left) {
         *buf++ = ch;
         char_cnt++;
     }

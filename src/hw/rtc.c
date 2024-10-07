@@ -42,21 +42,21 @@
 #define RTC_B_24HR 0x02
 #define RTC_B_DSE  0x01
 
-uint8_t rtc_read(int idx)
+static uint8_t rtc_read(int idx)
 {
     idx |= NMI_DISABLE_BIT;
     io_write_8(CMOS_INDEX, idx);
     return io_read_8(CMOS_DATA);
 }
 
-void rtc_write(int idx, uint8_t val)
+static void rtc_write(int idx, uint8_t val)
 {
     idx |= NMI_DISABLE_BIT;
     io_write_8(CMOS_INDEX, idx);
     io_write_8(CMOS_DATA, val);
 }
 
-int rtc_wait_update(void)
+static int rtc_wait_update(void)
 {
     for (int i = 0; i < 1024; i++) {
         if (!(rtc_read(CMOS_STATUS_A) & RTC_A_UIP)) return 0;
@@ -64,7 +64,17 @@ int rtc_wait_update(void)
     return -1;
 }
 
-int rtc_init(void)
+const char *rtc_get_name(struct device *dev)
+{
+    return "Generic RTC";
+}
+
+const char *rtc_get_vendor(struct device *dev)
+{
+    return "Unknown";
+}
+
+int rtc_reset(struct device *dev)
 {
     rtc_write(CMOS_STATUS_A, 0x26);
     uint8_t val = rtc_read(CMOS_STATUS_B);
@@ -75,4 +85,31 @@ int rtc_init(void)
     rtc_read(CMOS_STATUS_D);
 
     return rtc_wait_update();
+}
+
+time_t rtc_get_time(struct device *dev)
+{
+    return 0;
+}
+void rtc_set_time(struct device *dev, time_t time)
+{
+    
+}
+
+time_t rtc_get_alarm(struct device *dev)
+{
+    return 0;
+}
+void rtc_set_alarm(struct device *dev, time_t time)
+{
+    
+}
+
+uint8_t rtc_read_nvsram(struct device *dev, int idx)
+{
+    return 0;
+}
+void rtc_write_nvsram(struct device *dev, int idx, uint8_t val)
+{
+    
 }

@@ -541,11 +541,11 @@ static int parse_command(void)
 
 static int read_line(char *buf, int buflen)
 {
-    int rxbyte, len = 0;
+    int len = 0;
+    char rxbyte;
 
     do {
-        rxbyte = mc68681_read_byte(0);
-        if (rxbyte < 0) break;
+        if (ehbcfw_aio_rx(0, &rxbyte)) break;
 
         switch (rxbyte) {
             case '\r':
@@ -559,7 +559,7 @@ static int read_line(char *buf, int buflen)
                 }
                 break;
             default:
-                mc68681_write_byte(0, rxbyte);
+                ehbcfw_aio_tx(0, rxbyte);
                 *buf++ = rxbyte;
                 len++;
         }

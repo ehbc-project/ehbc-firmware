@@ -63,7 +63,7 @@ void system_dump(struct reg_dump regs, struct stack_frame frame)
     debug_write("\nStack Trace:\n");
     void *sp = regs.sp;
     void *pc = frame.pc;
-    for (int i = 0; pc != NULL; i++) {
+    for (int i = 0; pc && sp; i++) {
         debug_printf("Stack Frame #%d: PC=%p SP=%p\n", i, pc, sp);
         void *ptr = (void*)((uint32_t)sp & 0xFFFFFFF0);
         for (int i = 0; i < 4; i++) {

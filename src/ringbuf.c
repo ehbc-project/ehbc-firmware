@@ -4,8 +4,8 @@ void ringbuf8_init(struct ringbuf8 *rb, unsigned long size, uint8_t *buf)
 {
     rb->size = size;
     rb->buf = buf;
-    rb->rptr = 0;
-    rb->wptr = 0;
+    atomic_init(&rb->rptr, 0);
+    atomic_init(&rb->wptr, 0);
 }
 
 int ringbuf8_read(struct ringbuf8 *rb, uint8_t *data)
@@ -16,9 +16,10 @@ int ringbuf8_read(struct ringbuf8 *rb, uint8_t *data)
 
     *data = rb->buf[rb->rptr];
 
-    rb->rptr++;
-    if (rb->rptr >= rb->size) {
-        rb->rptr = 0;
+    if (rb->rptr < rb->size - 1) {
+        atomic_fetch_add(&rb->rptr, 1);
+    } else {
+        atomic_store(&rb->rptr, 0);
     }
 
     return 0;
@@ -32,10 +33,20 @@ int ringbuf8_write(struct ringbuf8 *rb, uint8_t data)
 
     rb->buf[rb->wptr] = data;
 
-    rb->wptr++;
-    if (rb->wptr >= rb->size) {
-        rb->wptr = 0;
+    if (rb->wptr < rb->size - 1) {
+        atomic_fetch_add(&rb->wptr, 1);
+    } else {
+        atomic_store(&rb->wptr, 0);
     }
 
     return 0;
+}
+
+unsigned int ringbuf8_getfree(struct ringbuf8 *rb)
+{
+    if (rb->rptr <= rb->wptr) {
+        return rb->wptr - rb->rptr;
+    } else {
+        return rb->size - rb->rptr + rb->wptr;
+    }
 }

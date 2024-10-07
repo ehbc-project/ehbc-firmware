@@ -7,6 +7,23 @@
 #include <string.h>
 #include <macros.h>
 
+#define FDC_SRA     0x3F0
+#define FDC_SRB     0x3F1
+#define FDC_DOR     0x3F2
+#define FDC_TDR     0x3F3
+#define FDC_MSR     0x3F4
+#define FDC_DRSR    0x3F4
+#define FDC_FIFO    0x3F5
+#define FDC_DIR     0x3F7
+#define FDC_CCR     0x3F7
+
+#define CMD_SPECIFY 0x03
+#define CMD_WRITE   0x05
+#define CMD_READ    0x06
+#define CMD_RECALIB 0x07
+#define CMD_SENSE   0x08
+#define CMD_SEEK    0x09
+
 static const struct floppy_info finfo_table[] = {
     // Unknown
     { { 0, 0, 0 },   0x00, 0x00 },

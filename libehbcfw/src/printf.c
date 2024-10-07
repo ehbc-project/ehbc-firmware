@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "libehbcfw/syscall.h"
+#include <libehbcfw/syscall.h>
 
 int printf(const char *fmt, ...)
 {
@@ -11,8 +11,6 @@ int printf(const char *fmt, ...)
     int ret = vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
 
-    for (int i = 0; i < sizeof(buf) && buf[i]; i++) {
-        ehbcfw_aio_tx(0, buf[i]);
-    }
+    ehbcfw_video_write_ansi_tty(2, buf, sizeof(buf));
     return ret;
 }

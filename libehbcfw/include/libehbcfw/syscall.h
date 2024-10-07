@@ -1,5 +1,7 @@
-#ifndef __SYSCALL_H__
-#define __SYSCALL_H__
+#ifndef __LIBEHBCFW_SYSCALL_H__
+#define __LIBEHBCFW_SYSCALL_H__
+
+#include <stdint.h>
 
 #include <arch-syscall.h>
 
@@ -44,13 +46,12 @@ struct ehbcfw_aio_param {
     int bpc;
 };
 
-int ehbcfw_aio_initialize_port(int port, struct ehbcfw_aio_param param);
-int ehbcfw_aio_wait_tx(int port, char ch);
-int ehbcfw_aio_tx(int port, char ch);
-int ehbcfw_aio_wait_rx(int port, char *buf);
-int ehbcfw_aio_rx(int port, char *buf);
-int ehbcfw_aio_get_status(int port, int *status);
-int ehbcfw_aio_tx_string(int port, const char *str, unsigned long len);
+int ehbcfw_aio_initialize_port(int id, struct ehbcfw_aio_param param);
+int ehbcfw_aio_wait_tx(int id, char ch);
+int ehbcfw_aio_tx(int id, char ch);
+int ehbcfw_aio_wait_rx(int id, char *buf);
+int ehbcfw_aio_rx(int id, char *buf);
+int ehbcfw_aio_get_status(int id, int *status);
 
 enum ehbcfw_vmode_type {
     VT_TEXT = 0, VT_CGA, VT_PLANAR, VT_PACKED, VT_DIRECT
@@ -64,19 +65,20 @@ struct ehbcfw_vmode_param_table {
     int bpp;
 };
 
-const struct ehbcfw_vmode_param_table *ehbcfw_video_set_mode(int mode);
-const struct ehbcfw_vmode_param_table *ehbcfw_video_get_param_table(int mode);
-const struct ehbcfw_vmode_param_table *ehbcfw_video_get_status(void);
-void ehbcfw_video_set_cursor_shape(int shape);
-void ehbcfw_video_set_cursor_pos(int row, int col);
-void ehbcfw_video_get_cursor(int *shape, int *row, int *col);
-void ehbcfw_video_scroll_area(int count, int attr, int upper_row, int lower_row, int left_col, int right_col);
-void ehbcfw_video_read_char_attr(int *ch, int *attr);
-void ehbcfw_video_write_char_attr(int ch, int attr);
-void ehbcfw_video_write_string(const char *str, unsigned int len, int flags);
-void ehbcfw_video_write_ansi_tty(const char *str, unsigned int len);
-void ehbcfw_video_load_text_font(void *data);
-void ehbcfw_video_load_palette(void *data, unsigned int size);
+int ehbcfw_video_set_mode(int id, int mode);
+int ehbcfw_video_get_mode(int id);
+void ehbcfw_video_set_cursor_shape(int id, uint16_t shape);
+uint16_t ehbcfw_video_get_cursor_shape(int id);
+void ehbcfw_video_set_cursor_pos(int id, uint16_t pos);
+uint16_t ehbcfw_video_get_cursor_pos(int id);
+void ehbcfw_video_scroll_area(int id, int count, int attr, int top, int bottom, int left, int right);
+void ehbcfw_video_read_char_attr(int id, int *ch, int *attr);
+void ehbcfw_video_write_char_attr(int id, int ch, int attr);
+void ehbcfw_video_write_string(int id, const char *str, unsigned int len, int attr);
+void ehbcfw_video_write_string_with_attr(int id, const uint16_t *str, unsigned int len);
+void ehbcfw_video_write_ansi_tty(int id, const char *str, unsigned int len);
+void ehbcfw_video_load_text_font(int id, void *data);
+void ehbcfw_video_load_palette(int id, void *data, unsigned int size);
 
 struct ehbcfw_drive_param_table {
     int id;
@@ -90,4 +92,6 @@ int ehbcfw_storage_write_sectors_chs(int id, int head, int cylinder, int sector,
 int ehbcfw_storage_read_sectors_lba(int id, long long lba, int count, void *buf);
 int ehbcfw_storage_write_sectors_lba(int id, long long lba, int count, const void *buf);
 
-#endif // __SYSCALL_H__
+
+
+#endif // __LIBEHBCFW_SYSCALL_H__
