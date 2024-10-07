@@ -17,4 +17,6 @@ struct tm {
     int tm_isdst;
 };
 
+time_t mktime(struct tm *time);
+
 #endif // __TIME_H__

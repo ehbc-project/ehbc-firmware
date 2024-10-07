@@ -319,6 +319,10 @@ void vga_write_ansi_tty(struct device *dev, const char* str, unsigned int len)
                 tmp |= *str << 8;
                 ptr[cur] = tmp;
                 cur++;
+                if (cur >= screen_width * screen_height) {
+                    vga_scroll_area(dev, 1, -1, 0, screen_height - 1, 0, screen_width - 1);
+                    cur -= screen_width;
+                }
             }
         }
         str++;
@@ -363,16 +367,6 @@ void vga_scroll_area(struct device *dev, int amount, int attr, int top, int bott
             }
         }
     }
-
-    uint16_t cursor_pos = vga_get_cursor_pos(dev);
-    int cursor_row = cursor_pos / screen_width - amount;
-    int cursor_col = cursor_pos % screen_width;
-
-    if (top <= cursor_row && cursor_row <= bottom && left <= cursor_col && cursor_col <= right) {
-        cursor_pos -= screen_width * amount;
-    }
-
-    vga_set_cursor_pos(dev, cursor_pos);
 }
 
 void vga_read_char_attr(struct device *dev, int *ch, int *attr)
