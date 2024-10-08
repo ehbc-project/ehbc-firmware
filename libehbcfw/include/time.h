@@ -2,6 +2,7 @@
 #define __TIME_H__
 
 #include <stdint.h>
+#include <stddef.h>
 
 typedef int64_t time_t;
 
@@ -18,5 +19,7 @@ struct tm {
 };
 
 time_t mktime(struct tm *time);
+
+size_t strftime(char *str, size_t maxsize, const char *fmt, const struct tm *tm);
 
 #endif // __TIME_H__

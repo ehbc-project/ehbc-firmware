@@ -37,3 +37,13 @@ int ehbcfw_aio_rx(int id, char *buf)
         return 0;
     }
 }
+
+int ehbcfw_aio_flush_tx(int id)
+{
+    return __syscall1(1, 5, id & 0xFF);
+}
+
+int ehbcfw_aio_flush_rx(int id)
+{
+    return __syscall1(1, 6, id & 0xFF);
+}

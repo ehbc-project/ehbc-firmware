@@ -26,14 +26,16 @@ struct aio_device_ops {
     int (*wait_recv)(struct device *);
     int (*recv)(struct device *);
     int (*get_status)(struct device *, int *);
+    int (*flush_tx)(struct device *);
+    int (*flush_rx)(struct device *);
 };
 
 struct storage_device_ops {
     int (*get_status)(struct device *);
-    int (*read_sectors_chs)(struct device *, int, int, int, int, void *);
-    int (*write_sectors_chs)(struct device *, int, int, int, int, const void *);
-    int (*read_sectors_lba)(struct device *, long long, int, void *);
-    int (*write_sectors_lba)(struct device *, long long, int, const void *);
+    int (*read_sectors_chs)(struct device *, struct chs, int, void *);
+    int (*write_sectors_chs)(struct device *, struct chs, int, const void *);
+    int (*read_sectors_lba)(struct device *, lba_t, int, void *);
+    int (*write_sectors_lba)(struct device *, lba_t, int, const void *);
 };
 
 struct video_device_ops {

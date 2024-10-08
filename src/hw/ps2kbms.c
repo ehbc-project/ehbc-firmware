@@ -4,7 +4,7 @@
 
 #include "hw/ps2kbms.h"
 
-#include "io.h"
+#include <asm/io.h>
 
 // I/O port
 #define I8042_DATA              0x0060
@@ -277,7 +277,22 @@ void ps2kbms_poll()
     }
 }
 
-int ps2kbms_init()
+const char *ps2kbms_get_name(struct device *dev)
+{
+    return "Generic PS/2 Keyboard or Mouse";
+}
+
+const char *ps2kbms_get_vendor(struct device *dev)
+{
+    return "Unknown";
+}
+
+int ps2kbms_probe(struct device *dev)
+{
+    return 0;
+}
+
+int ps2kbms_reset(struct device *dev)
 {
     int ret = i8042_flush();
     if (ret) return ret;

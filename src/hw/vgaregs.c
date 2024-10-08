@@ -4,7 +4,7 @@
 
 #include "hw/vgaregs.h"
 
-#include "io.h"
+#include <asm/io.h>
 
 void vga_out_cr(int idx, uint8_t val, int mport)
 {

@@ -26,4 +26,5 @@ target_link_libraries(example_hello_world crtend)
 target_include_directories(example_hello_world PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(example_hello_world PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(example_hello_world PUBLIC libehbcfw)
+target_link_options(example_hello_world PUBLIC -T "${CMAKE_SOURCE_DIR}/libehbcfw/arch/m68k/proto1/ldscript.x")
 

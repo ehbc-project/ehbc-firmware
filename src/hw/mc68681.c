@@ -115,6 +115,9 @@ int mc68681_cha_reset(struct device *dev)
     struct device_mc68681 *param = dev->param;
     struct mc68681_regs *regs = param->mmio_base;
 
+    mc68681_cha_flushtx(dev);
+    mc68681_cha_flushrx(dev);
+
     regs->cra = 0x0A;  // disable tx, rx
     regs->cra = 0x20;  // reset rx
     regs->cra = 0x30;  // reset tx
@@ -132,6 +135,9 @@ int mc68681_chb_reset(struct device *dev)
 {
     struct device_mc68681 *param = dev->param;
     struct mc68681_regs *regs = param->mmio_base;
+
+    mc68681_chb_flushtx(dev);
+    mc68681_chb_flushrx(dev);
 
     regs->crb = 0x0A;  // disable tx, rx
     regs->crb = 0x20;  // reset rx
@@ -268,3 +274,31 @@ int mc68681_chb_write_byte(struct device *dev, uint8_t chr)
     return 0;
 }
 
+int mc68681_cha_flushtx(struct device *dev)
+{
+    struct device_mc68681 *param = dev->param;
+    struct mc68681_regs *regs = param->mmio_base;
+    ringbuf8_flush(param->cha_txbuf);
+    return 0;
+}
+
+int mc68681_cha_flushrx(struct device *dev)
+{
+    struct device_mc68681 *param = dev->param;
+    ringbuf8_flush(param->cha_rxbuf);
+    return 0;
+}
+
+int mc68681_chb_flushtx(struct device *dev)
+{
+    struct device_mc68681 *param = dev->param;
+    ringbuf8_flush(param->chb_txbuf);
+    return 0;
+}
+
+int mc68681_chb_flushrx(struct device *dev)
+{
+    struct device_mc68681 *param = dev->param;
+    ringbuf8_flush(param->chb_rxbuf);
+    return 0;
+}

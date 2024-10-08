@@ -20,6 +20,10 @@ static long syscall_handler_aio(const struct syscall_args *args)
         case 3:
         case 4:
             return dev->aio_ops.wait_recv(dev);
+        case 5:
+            return dev->aio_ops.flush_tx(dev);
+        case 6:
+            return dev->aio_ops.flush_rx(dev);
         default:
             break;
     }
@@ -56,6 +60,33 @@ static long syscall_handler_video(const struct syscall_args *args)
     return 0;
 }
 
+static long syscall_handler_storage(const struct syscall_args *args)
+{
+    struct device *dev = find_device(args->d[1] & 0xFF);
+    if (dev->class != DC_STORAGE) return 0;
+
+    switch (args->d[0] & 0xFFFF) {
+        default:
+            break;
+    }
+    return 0;
+}
+
+static long syscall_handler_rtc(const struct syscall_args *args)
+{
+    struct device *dev = find_device(args->d[1] & 0xFF);
+    if (dev->class != DC_RTC) return 0;
+
+    switch (args->d[0] & 0xFFFF) {
+        case 0:
+            *(time_t*)args->d[2] = dev->rtc_ops.get_time(dev);
+            return 0;
+        default:
+            break;
+    }
+    return 0;
+}
+
 long syscall_handler(struct syscall_args args) {
     switch ((args.d[0] >> 16) & 0xFFFF) {
         case 0:
@@ -65,8 +96,11 @@ long syscall_handler(struct syscall_args args) {
         case 2:
             return syscall_handler_video(&args);
         case 3:
+            break;
         case 4:
+            return syscall_handler_storage(&args);
         case 5:
+            return syscall_handler_rtc(&args);
         case 6:
         default:
             break;

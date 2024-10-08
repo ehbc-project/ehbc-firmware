@@ -32,4 +32,9 @@ int mc68681_chb_read_byte(struct device *dev);
 int mc68681_cha_write_byte(struct device *dev, uint8_t chr);
 int mc68681_chb_write_byte(struct device *dev, uint8_t chr);
 
+int mc68681_cha_flushtx(struct device *dev);
+int mc68681_cha_flushrx(struct device *dev);
+int mc68681_chb_flushtx(struct device *dev);
+int mc68681_chb_flushrx(struct device *dev);
+
 #endif  // HW_MC68681_H__

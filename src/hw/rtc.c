@@ -5,8 +5,11 @@
 #include "hw/rtc.h"
 
 #include <string.h>
+#include <time.h>
 #include <macros.h>
-#include "io.h"
+
+#include <asm/io.h>
+
 
 #define CMOS_INDEX        0x0070
 #define CMOS_DATA         0x0071
@@ -21,8 +24,8 @@
 #define CMOS_RTC_MINUTES_ALARM   0x03
 #define CMOS_RTC_HOURS           0x04
 #define CMOS_RTC_HOURS_ALARM     0x05
-#define CMOS_RTC_DAY_WEEK        0x06
-#define CMOS_RTC_DAY_MONTH       0x07
+#define CMOS_RTC_WEEKDAY         0x06
+#define CMOS_RTC_MONTHDAY        0x07
 #define CMOS_RTC_MONTH           0x08
 #define CMOS_RTC_YEAR            0x09
 #define CMOS_STATUS_A            0x0a
@@ -41,6 +44,11 @@
 #define RTC_B_BIN  0x04
 #define RTC_B_24HR 0x02
 #define RTC_B_DSE  0x01
+
+static uint8_t bcd2int(uint8_t bcd)
+{
+    return (bcd >> 4) * 10 + (bcd & 0xF);
+}
 
 static uint8_t rtc_read(int idx)
 {
@@ -89,7 +97,16 @@ int rtc_reset(struct device *dev)
 
 time_t rtc_get_time(struct device *dev)
 {
-    return 0;
+    struct tm tm = {
+        .tm_sec = bcd2int(rtc_read(CMOS_RTC_SECONDS)),
+        .tm_min = bcd2int(rtc_read(CMOS_RTC_MINUTES)),
+        .tm_hour = bcd2int(rtc_read(CMOS_RTC_HOURS)),
+        .tm_mday = bcd2int(rtc_read(CMOS_RTC_MONTHDAY)),
+        .tm_mon = bcd2int(rtc_read(CMOS_RTC_MONTH)) - 1,
+        .tm_year = bcd2int(rtc_read(CMOS_RTC_YEAR)) + 100,
+    };
+
+    return mktime(&tm);
 }
 void rtc_set_time(struct device *dev, time_t time)
 {
@@ -98,7 +115,16 @@ void rtc_set_time(struct device *dev, time_t time)
 
 time_t rtc_get_alarm(struct device *dev)
 {
-    return 0;
+    struct tm tm = {
+        .tm_sec = bcd2int(rtc_read(CMOS_RTC_SECONDS_ALARM)),
+        .tm_min = bcd2int(rtc_read(CMOS_RTC_MINUTES_ALARM)),
+        .tm_hour = bcd2int(rtc_read(CMOS_RTC_HOURS_ALARM)),
+        .tm_mday = bcd2int(rtc_read(CMOS_RTC_MONTHDAY)),
+        .tm_mon = bcd2int(rtc_read(CMOS_RTC_MONTH)) - 1,
+        .tm_year = bcd2int(rtc_read(CMOS_RTC_YEAR)) + 100,
+    };
+
+    return mktime(&tm);
 }
 void rtc_set_alarm(struct device *dev, time_t time)
 {
@@ -107,9 +133,13 @@ void rtc_set_alarm(struct device *dev, time_t time)
 
 uint8_t rtc_read_nvsram(struct device *dev, int idx)
 {
-    return 0;
+    if (idx >= 50) return 0;
+
+    return rtc_read(idx + 14);
 }
 void rtc_write_nvsram(struct device *dev, int idx, uint8_t val)
 {
-    
+    if (idx >= 50) return;
+
+    rtc_write(idx + 14, val);
 }

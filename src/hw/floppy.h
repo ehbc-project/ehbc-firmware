@@ -1,13 +1,10 @@
 #ifndef HW_FLOPPY_H__
 #define HW_FLOPPY_H__
 
-#include "types.h"
+#include <libehbcfw/disk.h>
+#include <libehbcfw/device.h>
 
-struct chs {
-    uint16_t head;
-    uint16_t cylinder;
-    uint16_t sector;
-};
+#include "types.h"
 
 enum floppy_size {
     FSZ_525 = 0, FSZ_35
@@ -23,6 +20,17 @@ struct floppy_info {
     enum floppy_data_rate data_rate;
 };
 
-int floppy_init(int id, int type);
+const char *floppy_get_name(struct device *dev);
+const char *floppy_get_vendor(struct device *dev);
+
+int floppy_drive0_probe(struct device *dev);
+int floppy_drive1_probe(struct device *dev);
+int floppy_drive2_probe(struct device *dev);
+int floppy_drive3_probe(struct device *dev);
+
+int floppy_drive0_reset(struct device *dev);
+int floppy_drive1_reset(struct device *dev);
+int floppy_drive2_reset(struct device *dev);
+int floppy_drive3_reset(struct device *dev);
 
 #endif  // HW_FLOPPY_H__

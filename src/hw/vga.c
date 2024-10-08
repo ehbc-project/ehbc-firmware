@@ -6,8 +6,9 @@
 
 #include <string.h>
 
+#include <asm/io.h>
+
 #include "hw/vgaregs.h"
-#include "io.h"
 
 #define VGA_MEMORY_BASE     0xFE0A0000
 
@@ -246,6 +247,8 @@ int vga_probe(struct device *dev)
 
 int vga_reset(struct device *dev)
 {
+    vga_out_sr(0x00, 0x00);  // reset sync, async
+
     vga_out_misc(0xC3);
     vga_out_sr(0x04, 0x02);
 
@@ -371,10 +374,17 @@ void vga_scroll_area(struct device *dev, int amount, int attr, int top, int bott
 
 void vga_read_char_attr(struct device *dev, int *ch, int *attr)
 {
+    uint16_t cur = vga_get_cursor_pos(dev);
+    uint16_t *ptr = (uint16_t*)current_vmode->info.buf_base;
 
+    *ch = ptr[cur] >> 8;
+    *attr = ptr[cur] & 0xFF;
 }
 
 void vga_write_char_attr(struct device *dev, int ch, int attr)
 {
+    uint16_t cur = vga_get_cursor_pos(dev);
+    uint16_t *ptr = (uint16_t*)current_vmode->info.buf_base;
 
+    ptr[cur] = ((ch & 0xFF) << 8) | (attr & 0xFF);
 }

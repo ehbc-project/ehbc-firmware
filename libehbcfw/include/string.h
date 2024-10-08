@@ -34,7 +34,7 @@ size_t strspn(const char *p1, const char *p2);  // not implemented yet
 
 char *strpbrk(const char *p1, const char *p2);  // not implemented yet
 
-char *strtok(char *str, const char *delim);  // not implemented yet
+char *strtok(char *str, const char *delim);
 
 size_t strnlen(const char *str, size_t maxlen);
 size_t strlen(const char *str);

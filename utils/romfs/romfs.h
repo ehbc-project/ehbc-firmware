@@ -2,6 +2,7 @@
 #define __ROMFS_H__
 
 #include <stdint.h>
+#include <stddef.h>
 
 struct romfs_fshdr {
     char magic[4];                  // ASCII '\0', 'r', 'o', 'm'
@@ -11,7 +12,6 @@ struct romfs_fshdr {
     uint32_t first_filehdr_offs;    // offset of the first file
     uint32_t vname_offs;            // offset of volume name from string table
     uint32_t checksum;              // checksum of fs header and string table
-    char strtab[];
 };
 
 struct romfs_filehdr {
@@ -22,5 +22,15 @@ struct romfs_filehdr {
     uint32_t checksum;              // checksum of the header and data
     uint8_t data[];                 // file data. if the directory flag is set, it contains offset of the head of the file header list (four bytes)
 };
+
+void romfs_create(const char *vol_name);
+
+int romfs_mkdir(const char *dir_name);
+
+int romfs_mkfile(const char *file_name, const void *buf, size_t len);
+
+int romfs_save(const char *path);
+
+void romfs_cleanup(void);
 
 #endif // __ROMFS_H__

@@ -40,7 +40,10 @@ int add_device(struct device *dev)
     dev->id = new_id;
     dev->next = NULL;
     
-    if (dev->probe && !dev->probe(dev)) {
+    if (dev->probe) {
+        if (dev->probe(dev)) {
+            return dev->id;
+        }
         dev->flags |= DF_AVAILABLE;
     }
 

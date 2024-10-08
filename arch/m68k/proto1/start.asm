@@ -11,12 +11,12 @@ _start::
 
     SECTION     .text
 start:
-    LEA         __istack_end,SP         ; interrupt stack pointer
+    LEA         __istack_end,SP         ; set interrupt stack pointer
 
     ORI.W       #$1000,SR               ; switch to master state
 
-    LEA         __stack_end,SP          ; master stack pointer
-    MOVEA.L     SP,A6                   ; frame pointer
+    LEA         __stack_end,SP          ; set master stack pointer
+    MOVEA.L     SP,A6                   ; set frame pointer
 
     BSET.B      #1,($FF000000)          ; disable initial vector
 
@@ -38,6 +38,3 @@ start:
 test_bank:
     CLR.L       D1
     RTS
-
-__helloworld_str:
-    DC.B "Hello, World!\r\n", 0

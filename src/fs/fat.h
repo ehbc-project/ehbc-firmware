@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <libehbcfw/disk.h>
+
 #define SEEK_SET 0
 #define SEEK_CUR 1
 #define SEEK_END 2
@@ -31,8 +33,6 @@
 #endif
 
 #define FAT_SECTOR_SIZE         512
-
-typedef int64_t lba_t;
 
 struct fat_filesystem {
     int         diskid;

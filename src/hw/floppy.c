@@ -45,11 +45,63 @@ static const struct floppy_info finfo_table[] = {
     { { 2, 40, 8 },  FSZ_525, FDR_250K },
 };
 
-int floppy_init(int id, int type)
+const char *floppy_get_name(struct device *dev)
 {
-    if (type <= 0 || type >= ARRAY_SIZE(finfo_table)) {
-        return 1;
-    }
+    return "Floppy Drive";
+}
 
+const char *floppy_get_vendor(struct device *dev)
+{
+    return "Unknown";
+}
+
+int floppy_probe_common(struct device *dev, int drive)
+{
     return 0;
 }
+
+int floppy_drive0_probe(struct device *dev)
+{
+    return floppy_probe_common(dev, 0);
+}
+
+int floppy_drive1_probe(struct device *dev)
+{
+    return floppy_probe_common(dev, 1);
+}
+
+int floppy_drive2_probe(struct device *dev)
+{
+    return floppy_probe_common(dev, 2);
+}
+
+int floppy_drive3_probe(struct device *dev)
+{
+    return floppy_probe_common(dev, 3);
+}
+
+int floppy_reset_common(struct device *dev, int drive)
+{
+    return 0;
+}
+
+int floppy_drive0_reset(struct device *dev)
+{
+    return floppy_reset_common(dev, 0);
+}
+
+int floppy_drive1_reset(struct device *dev)
+{
+    return floppy_reset_common(dev, 1);
+}
+
+int floppy_drive2_reset(struct device *dev)
+{
+    return floppy_reset_common(dev, 2);
+}
+
+int floppy_drive3_reset(struct device *dev)
+{
+    return floppy_reset_common(dev, 3);
+}
+

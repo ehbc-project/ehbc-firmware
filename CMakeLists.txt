@@ -61,7 +61,7 @@ target_link_libraries(firmware gcc)
 target_link_libraries(firmware libehbcfw)
 
 target_include_directories(firmware PUBLIC "${CMAKE_SOURCE_DIR}/include")
-target_include_directories(firmware PUBLIC "${CMAKE_SOURCE_DIR}/src")
+target_include_directories(firmware PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_include_directories(firmware PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(firmware PUBLIC libehbcfw)
 

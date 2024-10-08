@@ -2,8 +2,10 @@
 #define __LIBEHBCFW_SYSCALL_H__
 
 #include <stdint.h>
+#include <time.h>
 
 #include <arch-syscall.h>
+#include <libehbcfw/disk.h>
 
 void ehbcfw_boot_next(void);
 int ehbcfw_deinitialize(void);
@@ -52,6 +54,8 @@ int ehbcfw_aio_tx(int id, char ch);
 int ehbcfw_aio_wait_rx(int id, char *buf);
 int ehbcfw_aio_rx(int id, char *buf);
 int ehbcfw_aio_get_status(int id, int *status);
+int ehbcfw_aio_flush_tx(int id);
+int ehbcfw_aio_flush_rx(int id);
 
 enum ehbcfw_vmode_type {
     VT_TEXT = 0, VT_CGA, VT_PLANAR, VT_PACKED, VT_DIRECT
@@ -87,11 +91,11 @@ struct ehbcfw_drive_param_table {
 void ehbcfw_storage_reset(int id);
 int ehbcfw_storage_get_status(int id);
 const struct ehbcfw_drive_param_table *ehbcfw_storage_get_param_table(int id);
-int ehbcfw_storage_read_sectors_chs(int id, int head, int cylinder, int sector, int count, void *buf);
-int ehbcfw_storage_write_sectors_chs(int id, int head, int cylinder, int sector, int count, const void *buf);
-int ehbcfw_storage_read_sectors_lba(int id, long long lba, int count, void *buf);
-int ehbcfw_storage_write_sectors_lba(int id, long long lba, int count, const void *buf);
+int ehbcfw_storage_read_sectors_chs(int id, struct chs chs, int count, void *buf);
+int ehbcfw_storage_write_sectors_chs(int id, struct chs chs, int count, const void *buf);
+int ehbcfw_storage_read_sectors_lba(int id, lba_t lba, int count, void *buf);
+int ehbcfw_storage_write_sectors_lba(int id, lba_t lba, int count, const void *buf);
 
-
+time_t ehbcfw_rtc_get_time(int id);
 
 #endif // __LIBEHBCFW_SYSCALL_H__

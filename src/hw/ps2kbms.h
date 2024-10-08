@@ -1,9 +1,21 @@
 #ifndef HW_I8042_H__
 #define HW_I8042_H__
 
-#include "types.h"
+#include <libehbcfw/device.h>
 
-int ps2kbms_init();
+#include "types.h"
+#include "ringbuf.h"
+
+struct device_ps2kbms {
+    struct ringbuf8 *kbbuf, *msbuf;
+};
+
+const char *ps2kbms_get_name(struct device *dev);
+const char *ps2kbms_get_vendor(struct device *dev);
+
+int ps2kbms_probe(struct device *dev);
+int ps2kbms_reset(struct device *dev);
+
 void ps2kbms_poll();
 int ps2_kb_command(int command, uint8_t *param);
 int ps2_ms_command(int command, uint8_t *param);

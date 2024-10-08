@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #define ALIGN16(val) (((val) + 15) & ~0xF)
 
@@ -82,6 +83,22 @@ int romfs_mkfile(const char *file_name, const void *buf, size_t len)
     ptr->checksum = 0;
     ptr->data_len = len;
     memcpy(ptr->data, buf, len);
+
+    return 0;
+}
+
+int romfs_save(const char *path)
+{
+    FILE *fp = fopen(path, "wb");
+    if (fp == NULL) {
+        return 1;
+    }
+
+    fwrite(&fs_header, sizeof(fs_header), 1, fp);
+    fwrite(strtab, strtab_size, 1, fp);
+    // fwrite();  // write files
+
+    fclose(fp);
 
     return 0;
 }
