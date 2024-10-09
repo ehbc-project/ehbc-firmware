@@ -4,6 +4,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(CheckLanguage)
 include(CheckTypeSize)
+include(CMakePrintHelpers)
 
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/cmake/M68kUnknownElfToolchain.cmake")
 
@@ -37,12 +38,10 @@ if (${VOIDPTR_SIZE} GREATER 4)
     set(MADDR_MSIZE_64BIT 1)
 endif()
 
-# Subdirectories
-add_subdirectory(arch)
-add_subdirectory(src)
-add_subdirectory(rsrc)
+configure_file("config.h.in" "config.h")
+
+# Dependencies
 add_subdirectory(libehbcfw)
-add_subdirectory(examples)
 add_subdirectory(utils)
 
 # Compile Options
@@ -60,12 +59,17 @@ target_compile_options(firmware PUBLIC
 target_link_libraries(firmware gcc)
 target_link_libraries(firmware libehbcfw)
 
+get_target_property(LIBEHBCFW_INCDIRS libehbcfw INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(firmware PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_include_directories(firmware PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_include_directories(firmware PRIVATE "${CMAKE_BINARY_DIR}")
-target_include_directories(firmware PUBLIC libehbcfw)
+target_include_directories(firmware PUBLIC libehbcfw::libehbcfw)
 
-configure_file("config.h.in" "config.h")
+# Subdirectories
+add_subdirectory(arch)
+add_subdirectory(src)
+add_subdirectory(rsrc)
+add_subdirectory(examples)
 
 # Additional Targets
 add_custom_target(romfs_image ALL

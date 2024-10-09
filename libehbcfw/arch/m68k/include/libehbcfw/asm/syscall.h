@@ -1,5 +1,5 @@
-#ifndef __ARCH_SYSCALL_H__
-#define __ARCH_SYSCALL_H__
+#ifndef __M68K_SYSCALL_H__
+#define __M68K_SYSCALL_H__
 
 static inline long __syscall0(unsigned int cat, unsigned int num)
 {
@@ -46,4 +46,4 @@ static inline long __syscall4(unsigned int cat, unsigned int num, long a, long b
     return d0;
 }
 
-#endif // __ARCH_SYSCALL_H__
+#endif // __M68K_SYSCALL_H__

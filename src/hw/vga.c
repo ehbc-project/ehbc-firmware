@@ -105,13 +105,13 @@ static void clear_screen(const struct video_mode *mode)
         
     switch (mode->info.mmodel) {
     case MM_TEXT:
-        memset16(fbuf_base, 0x0007, 0x10000);
+        memset16(fbuf_base, 0x0007, mode->info.width * mode->info.height);
         break;
     case MM_CGA:
-        memset16(fbuf_base, 0x0000, 0x10000);
+        memset16(fbuf_base, 0x0000, 0x8000);
         break;
     default:
-        memset16(fbuf_base, 0x0000, 0x20000);
+        memset16(fbuf_base, 0x0000, 0x10000);
     }
 }
 

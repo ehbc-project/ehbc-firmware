@@ -5,14 +5,14 @@ ENTRY(_start)
 
 MEMORY
 {
-    RAM(rwx)    : ORIGIN = 0x00020000, LENGTH = 1M - 128K
+    RAM(rwx)    : ORIGIN = 0x00010000, LENGTH = 1M - 64K
 }
 
 PROVIDE_HIDDEN(__stack_size = 16K);
 
 SECTIONS
 {
-    .stack 0x20000 :
+    .stack 0x10000 :
     {
         PROVIDE_HIDDEN(__stack_start = .);
         . = __stack_size;
@@ -27,7 +27,7 @@ SECTIONS
         PROVIDE_HIDDEN(__bss_end = .);
     } >RAM
 
-    .text :
+    .text 0x20000 :
     {
         KEEP(*(.text.startup .text.startup.*))
         KEEP(*(.text .text.*))

@@ -61,27 +61,24 @@ struct fat_filesystem {
     uint8_t     databuf[FAT_SECTOR_SIZE];
 };
 
-__attribute__((packed))
 union fat_time {
     uint16_t raw;
     struct {
         uint16_t second_div2 : 5;
         uint16_t minute : 6;
         uint16_t hour : 5;
-    };
-};
+    } __attribute__((packed));
+} __attribute__((packed));
 
-__attribute__((packed))
 union fat_date {
     uint16_t raw;
     struct {
         uint16_t day : 5;
         uint16_t month : 4;
         uint16_t year : 7;
-    };
-};
+    } __attribute__((packed));
+} __attribute__((packed));
 
-__attribute__((packed))
 struct fat_direntry_file {
     char            name[FAT_SFN_NAME];
     char            extension[FAT_SFN_EXTENSION];
@@ -96,9 +93,8 @@ struct fat_direntry_file {
     union fat_date  modified_date;
     uint16_t        cluster_location;
     uint32_t        size;
-};
+} __attribute__((packed));
 
-__attribute__((packed))
 struct fat_direntry_lfn {
     uint8_t         sequence_index;
     uint16_t        name_fragment1[5];
@@ -108,13 +104,12 @@ struct fat_direntry_lfn {
     uint16_t        name_fragment2[6];
     uint16_t        cluster_location;
     uint16_t        name_fragment3[2];
-};
+} __attribute__((packed));
 
-__attribute__((packed))
 union fat_dir_entry {
     struct fat_direntry_lfn lfn;
     struct fat_direntry_file file;
-};
+} __attribute__((packed));
 
 struct fat_file {
     struct fat_filesystem *fs;
@@ -146,7 +141,7 @@ enum fat_file_type {
 
 int fat_mount(struct fat_filesystem *fs, int diskid);
 
-int fat_dir_open_root(struct fat_filesystem *fs, struct fat_dir *dir);
+int fat_rootdir_open(struct fat_filesystem *fs, struct fat_dir *dir);
 int fat_dir_open(struct fat_dir *parent, struct fat_dir *dir, const char *name);
 
 int fat_dir_iter_start(struct fat_dir *dir, struct fat_dir_iter *iter);

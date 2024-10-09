@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <stdio.h>
+#include <bswap.h>
 #include <libehbcfw/syscall.h>
 
 #define FAT_LFN_END_MASK        0x40
@@ -35,7 +36,6 @@
 
 #define FAT_ATTR_LFNENTRY       (FAT_ATTR_READ_ONLY | FAT_ATTR_HIDDEN | FAT_ATTR_SYSTEM | FAT_ATTR_VOLUME_ID)
 
-__attribute__((packed))
 struct fat_bpb_sector {
     uint8_t         x86_jump_code[3];
     char            oem_name[8];
@@ -52,9 +52,7 @@ struct fat_bpb_sector {
     uint32_t        hidden_sector_count;
     uint32_t        total_sector_count32;
 
-    __attribute__((packed))
     union {
-        __attribute__((packed))
         struct {
             uint8_t         drive_num;
             uint8_t         __reserved1;
@@ -64,9 +62,8 @@ struct fat_bpb_sector {
             char            fs_type[8];
 
             uint8_t         boot_code[448];
-        } fat;
+        } __attribute__((packed)) fat;
 
-        __attribute__((packed))
         struct {
             uint32_t        fat_size32;
             uint16_t        flags;
@@ -83,13 +80,12 @@ struct fat_bpb_sector {
             char            fs_type[8];
 
             uint8_t         boot_code[420];
-        } fat32;
-    };
+        } __attribute__((packed)) fat32;
+    } __attribute__((packed));
 
     uint16_t        signature;
-};
+} __attribute__((packed));
 
-__attribute__((packed))
 struct fat_fsinfo {
     uint32_t        signature1;
     uint8_t         __reserved1[480];
@@ -98,11 +94,9 @@ struct fat_fsinfo {
     uint32_t        next_free_cluster;
     uint8_t         __reserved2[14];
     uint16_t        signature3;
-};
+} __attribute__((packed));
 
 typedef uint32_t fatcluster_t;
-
-#define test_bitfield(value, mask) (((value) & (mask)) == (mask))
 
 static int read_fat(struct fat_filesystem*, uint32_t);
 static int match_name(struct fat_dir*, const char*, struct fat_direntry_file*);
@@ -132,29 +126,22 @@ remove_right_padding(
 }
 
 static int
-sector_to_cluster(
-    struct fat_filesystem* fs,
-    fatcluster_t* cluster,
-    lba_t lba)
+sector_to_cluster(struct fat_filesystem* fs, fatcluster_t* cluster, lba_t lba)
 {
-    switch (fs->fat_type) {
-        case FAT_TYPE_FAT12:
-        case FAT_TYPE_FAT16:
-            *cluster =
-                (lba - fs->data_area_begin - fs->root_sector_count) /
-                fs->sectors_per_cluster + 2;
-            return 0;
-        case FAT_TYPE_FAT32:
-            *cluster =
-                (lba - fs->data_area_begin) /
-                fs->sectors_per_cluster + 2;
-            return 0;
-        default:
-            return 1;
+    if (fs->fat_type == FAT_TYPE_FAT32) {
+        *cluster = (lba - fs->data_area_begin) / fs->sectors_per_cluster + 2;
+        return 0;
+    } else if (fs->fat_type) {
+        *cluster =
+            (lba - fs->data_area_begin - fs->root_sector_count) /
+            fs->sectors_per_cluster + 2;
+        return 0;
     }
+    return 1;
 }
 
-static int cluster_to_sector(struct fat_filesystem* fs, lba_t* lba, fatcluster_t cluster)
+static int
+cluster_to_sector(struct fat_filesystem* fs, lba_t* lba, fatcluster_t cluster)
 {
     switch (fs->fat_type) {
         case FAT_TYPE_FAT12:
@@ -177,8 +164,7 @@ static int
 get_next_cluster(
     struct fat_filesystem* fs,
     fatcluster_t* cluster,
-    uint32_t num
-)
+    uint32_t num)
 {
     switch (fs->fat_type) {
         case FAT_TYPE_FAT12:
@@ -231,7 +217,7 @@ get_next_cluster(
 
                 read_fat(fs, sector_idx);
 
-                *cluster = ((uint16_t*)fs->fatbuf)[fatentry_idx];
+                *cluster = CONV_LE_16(((uint16_t*)fs->fatbuf)[fatentry_idx]);
                 if (*cluster > FAT16_MAX_CLUSTER) {
                     return 1;
                 }
@@ -248,7 +234,7 @@ get_next_cluster(
 
                 read_fat(fs, sector_idx);
 
-                *cluster = ((uint32_t*)fs->fatbuf)[fatentry_idx];
+                *cluster = CONV_LE_32(((uint32_t*)fs->fatbuf)[fatentry_idx]);
                 if (*cluster > FAT32_MAX_CLUSTER) {
                     return 1;
                 }
@@ -269,6 +255,17 @@ get_next_cluster(
  */
 static int read_sector(struct fat_filesystem* fs, lba_t lba)
 {
+    if (fs->databuf_lba == lba) return 0;
+
+    fs->databuf_lba = lba;
+    return ehbcfw_storage_read_sectors_lba(fs->diskid, lba, 1, fs->databuf);
+}
+
+// TODO: this function reads only the first sector of a cluster
+static int read_cluster(struct fat_filesystem* fs, fatcluster_t cluster)
+{
+    lba_t lba;
+    cluster_to_sector(fs, &lba, cluster);
     if (fs->databuf_lba == lba) return 0;
 
     fs->databuf_lba = lba;
@@ -451,7 +448,7 @@ lfn_ucs2_to_utf8(
 static size_t
 get_sfn_filename(
     const struct fat_direntry_file* entry,
-    char buf[static FAT_SFN_BUFLEN],
+    char *buf,
     int lowercase)
 {
     size_t char_count = 0;
@@ -485,23 +482,25 @@ int fat_mount(struct fat_filesystem *fs, int diskid)
 {
     fs->diskid = diskid;
     fs->sector_size = 512;
+    fs->databuf_lba = -1;
+    fs->fatbuf_lba = -1;
 
     /* Read sector 0 (BPB) */
     read_sector(fs, 0);
 
     const struct fat_bpb_sector* bpb = (void*)fs->databuf;
 
-    fs->sector_size = bpb->bytes_per_sector;
+    fs->sector_size = CONV_LE_16(bpb->bytes_per_sector);
     fs->sectors_per_cluster = bpb->sectors_per_cluster;
     fs->cluster_size = fs->sector_size * fs->sectors_per_cluster;
-    fs->root_entry_count = bpb->root_entry_count;
-    fs->reserved_sectors = bpb->reserved_sector_count;
+    fs->root_entry_count = CONV_LE_16(bpb->root_entry_count);
+    fs->reserved_sectors = CONV_LE_16(bpb->reserved_sector_count);
     fs->root_sector_count =
         ((fs->root_entry_count * 32) + (fs->sector_size - 1)) / fs->sector_size;
-    fs->fat_size = bpb->fat_size16 ? bpb->fat_size16 : bpb->fat32.fat_size32;
-    fs->total_sector_count =
-        bpb->total_sector_count16 ?
-            bpb->total_sector_count16 : bpb->total_sector_count32;
+    fs->fat_size = CONV_LE_16(bpb->fat_size16) ?
+        CONV_LE_16(bpb->fat_size16) : CONV_LE_32(bpb->fat32.fat_size32);
+    fs->total_sector_count = CONV_LE_16(bpb->total_sector_count16) ?
+        CONV_LE_16(bpb->total_sector_count16) : CONV_LE_32(bpb->total_sector_count32);
     fs->data_area_begin =
         fs->reserved_sectors + (bpb->fat_count * fs->fat_size);
     uint32_t data_sectors =
@@ -518,24 +517,35 @@ int fat_mount(struct fat_filesystem *fs, int diskid)
         fs->fat_type = FAT_TYPE_FAT32;
     }
 
+    /* copy volume label and serial */
+    if (fs->fat_type == FAT_TYPE_FAT32) {
+        memcpy(fs->volume_label, bpb->fat32.volume_label, sizeof(bpb->fat32.volume_label));
+        fs->volume_serial = CONV_LE_32(bpb->fat32.volume_serial);
+    } else {
+        memcpy(fs->volume_label, bpb->fat.volume_label, sizeof(bpb->fat.volume_label));
+        fs->volume_serial = CONV_LE_32(bpb->fat.volume_serial);
+    }
+
     /* Read FSINFO if FAT32 */
     if (fs->fat_type == FAT_TYPE_FAT32) {
-        fs->root_cluster = bpb->fat32.root_cluster;
+        fs->root_cluster = CONV_LE_32(bpb->fat32.root_cluster);
 
         read_sector(fs, 1);
         const struct fat_fsinfo* fsinfo = (void*)fs->databuf;
 
-        fs->free_clusters = fsinfo->free_clusters;
-        fs->next_free_cluster = fsinfo->next_free_cluster;
+        fs->free_clusters = CONV_LE_32(fsinfo->free_clusters);
+        fs->next_free_cluster = CONV_LE_32(fsinfo->next_free_cluster);
     }
+
 
     fs->mounted = 1;
 
     return 0;
 }
 
-int fat_dir_open_root(struct fat_filesystem *fs, struct fat_dir *dir)
+int fat_rootdir_open(struct fat_filesystem *fs, struct fat_dir *dir)
 {
+    dir->fs = fs;
     dir->head_cluster = fs->fat_type == FAT_TYPE_FAT32 ? fs->root_cluster : 0;
 
     return 0;
@@ -544,14 +554,15 @@ int fat_dir_open_root(struct fat_filesystem *fs, struct fat_dir *dir)
 int fat_dir_open(struct fat_dir *parent, struct fat_dir *dir, const char* name)
 {
     struct fat_direntry_file dirent;
-    if (!match_name(parent, name, &dirent)) {
+    if (match_name(parent, name, &dirent)) {
         return 1;
     }
 
-    const uint16_t head_cluster_lo = dirent.cluster_location;
-    const uint16_t head_cluster_hi = dirent.cluster_location_high;
+    const uint16_t head_cluster_lo = CONV_LE_16(dirent.cluster_location);
+    const uint16_t head_cluster_hi = CONV_LE_16(dirent.cluster_location_high);
     const uint32_t head_cluster = (head_cluster_hi << 16) | head_cluster_lo;
 
+    dir->fs = parent->fs;
     dir->head_cluster = head_cluster;
     memcpy(&dir->direntry, &dirent, sizeof(dirent));
 
@@ -564,7 +575,7 @@ int fat_dir_iter_start(struct fat_dir* dir, struct fat_dir_iter *iter)
     iter->current_block_idx = 0;
     iter->current_entry_idx = 0;
 
-    return fat_dir_iter_next(iter);
+    return 0;
 }
 
 int fat_dir_iter_next(struct fat_dir_iter *iter)
@@ -599,7 +610,7 @@ int fat_dir_iter_next(struct fat_dir_iter *iter)
             if (get_next_cluster(fs, &current_cluster, iter->current_block_idx)) {
                 return 1;
             }
-            // read_cluster(fs, current_cluster);  // TODO: fix here
+            read_cluster(fs, current_cluster);
         }
         entries = (union fat_dir_entry*)fs->databuf;
 
@@ -610,9 +621,7 @@ int fat_dir_iter_next(struct fat_dir_iter *iter)
                 return 1;
             } else if ((uint8_t)current_entry->file.name[0] == 0xE5) {
                 /* skip if file entry is deleted */
-            } else if (test_bitfield(
-                current_entry->file.attribute,
-                FAT_ATTR_LFNENTRY)) {
+            } else if (current_entry->file.attribute & FAT_ATTR_LFNENTRY) {
                 /* if current entry is LFN entry */
 #ifdef BUILD_FILESYSTEM_FAT_LFN
                 if (fs->options.lfn_enabled) {
@@ -621,9 +630,7 @@ int fat_dir_iter_next(struct fat_dir_iter *iter)
                     is_lfn = 1;
                 }  /* otherwise skip */
 #endif
-            } else if (test_bitfield(
-                current_entry->file.attribute,
-                FAT_ATTR_VOLUME_ID)) {
+            } else if (current_entry->file.attribute & FAT_ATTR_VOLUME_ID) {
                 /* skip if file entry is volume id */
                 is_lfn = 0;
             } else {
@@ -714,12 +721,12 @@ static int match_name(
     const char* name,
     struct fat_direntry_file* direntry_buf)
 {
-    if (!parent) return 0;
+    if (!parent) return 1;
     struct fat_filesystem* fs = parent->fs;
 
     struct fat_dir_iter iter;
     if (fat_dir_iter_start(parent, &iter)) {
-        return 0;
+        return 1;
     }
 
     while (!fat_dir_iter_next(&iter)) {
@@ -737,12 +744,12 @@ int fat_file_open(struct fat_dir *parent, struct fat_file *file, const char *nam
     struct fat_filesystem* fs = parent->fs;
 
     struct fat_direntry_file dirent;
-    if (!match_name(parent, name, &dirent)) {
+    if (match_name(parent, name, &dirent)) {
         return 1;
     }
 
-    const uint16_t head_cluster_lo = dirent.cluster_location;
-    const uint16_t head_cluster_hi = dirent.cluster_location_high;
+    const uint16_t head_cluster_lo = CONV_LE_16(dirent.cluster_location);
+    const uint16_t head_cluster_hi = CONV_LE_16(dirent.cluster_location_high);
     const uint32_t head_cluster = (head_cluster_hi << 16) | head_cluster_lo;
 
     file->fs = parent->fs;
@@ -765,8 +772,10 @@ long fat_file_read(struct fat_file *file, void *buf, unsigned long size, unsigne
     fatcluster_t cluster_idx = file->head_cluster;
     get_next_cluster(fs, &cluster_idx, file->cursor / fs->cluster_size);
 
+    uint32_t file_size = CONV_LE_32(file->direntry.size);
+
     for (size_t blkcnt = 0; blkcnt < count; blkcnt++) {
-        if (file->cursor + size > file->direntry.size) {
+        if (file->cursor + size > file_size) {
             return blkcnt;
         }
         uint32_t cluster_offs = file->cursor % fs->cluster_size;
@@ -776,7 +785,7 @@ long fat_file_read(struct fat_file *file, void *buf, unsigned long size, unsigne
             uint16_t cluster_max_read = fs->cluster_size - cluster_offs;
             uint16_t block_max_read = size - block_read_bytes;
 
-            // read_cluster(fs, cluster_idx);  // TODO: fix here
+            read_cluster(fs, cluster_idx);
 
             if (cluster_max_read > block_max_read) {
                 memcpy(bbuf, fs->databuf + cluster_offs, block_max_read);
@@ -801,23 +810,23 @@ long fat_file_read(struct fat_file *file, void *buf, unsigned long size, unsigne
 
 int fat_file_seek(struct fat_file* file, long offset, int origin)
 {
-    struct fat_direntry_file* entry = &file->direntry;
+    uint32_t file_size = CONV_LE_32(file->direntry.size);
 
     switch (origin) {
         case SEEK_SET:
-            if ((offset > entry->size) ||
+            if ((offset > file_size) ||
                 (offset < 0)) return 1;
             file->cursor = offset;
             break;
         case SEEK_CUR:
-            if ((offset + file->cursor > entry->size) ||
+            if ((offset + file->cursor > file_size) ||
             offset + file->cursor < 0)  return 1;
             file->cursor += offset;
             break;
         case SEEK_END:
             if ((offset > 0) ||
-                (offset + entry->size < 0)) return 1;
-            file->cursor = entry->size + offset;
+                (offset + file_size < 0)) return 1;
+            file->cursor = file_size + offset;
             break;
         default:
             return 1;
@@ -827,14 +836,14 @@ int fat_file_seek(struct fat_file* file, long offset, int origin)
 
 uint32_t fat_file_tell(struct fat_file *file)
 {
-    struct fat_direntry_file* entry = &file->direntry;
+    uint32_t file_size = CONV_LE_32(file->direntry.size);
 
-    if (file->cursor < 0 || file->cursor > entry->size) return -1;
+    if (file->cursor < 0 || file->cursor > file_size) return -1;
     return file->cursor;
 }
 
 int fat_file_iseof(struct fat_file *file)
 {
-    struct fat_direntry_file* entry = &file->direntry;
-    return file->cursor >= entry->size;
+    uint32_t file_size = CONV_LE_32(file->direntry.size);
+    return file->cursor >= file_size;
 }

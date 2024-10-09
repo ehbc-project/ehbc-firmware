@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "mmio.h"
+#include "hw/floppy.h"
 #include "hw/mc68681.h"
 
 #define FUNC(f) ((void*)(long)(f))
@@ -29,11 +31,25 @@ static void trace()
 }
 
 extern struct device *const mc68681_device;
+extern struct device *const floppy_device;
 
 __attribute__((interrupt_handler))
 static void interrupt_autovector()
 {
-    mc68681_irq_handler(mc68681_device);
+    uint32_t irq_status =
+        (mmio_read_8(0x10) << 16) |
+        (mmio_read_8(0x11) << 8) |
+        mmio_read_8(0x12);
+
+    if (irq_status & (1 << 16)) {
+        mc68681_irq_handler(mc68681_device);
+    }
+
+    if (irq_status & (1 << 6)) {
+        floppy_irq_handler(floppy_device);
+    }
+
+    mmio_read_8(0x12 + 2);  // ack
 }
 
 struct exception_vector exception_vector = {

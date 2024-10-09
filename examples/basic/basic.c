@@ -1,12 +1,11 @@
-#include "types.h"
-#include "hw/mc68681.h"
-#include "basic/mpool.h"
-
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <macros.h>
-#include "debug.h"
+#include <libehbcfw/syscall.h>
+
+#include "mpool.h"
 
 #define MAX_LINE 80
 
@@ -599,7 +598,7 @@ static int parse_line(const char *str, unsigned int len)
     return 0;
 }
 
-void run_basic(void)
+void main(void)
 {
     mpool_init((void*)0x10000, 65536);
 

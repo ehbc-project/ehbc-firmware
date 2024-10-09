@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <arch-syscall.h>
+#include <libehbcfw/asm/syscall.h>
 #include <libehbcfw/disk.h>
 
 void ehbcfw_boot_next(void);

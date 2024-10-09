@@ -105,8 +105,10 @@ static int parse_line(char *buf, int buflen)
                 case 'R':  // run address
                     state = 3;
                     break;
-                case '?':  // help
+                case 'L':  // load from disk
                     state = 4;
+                    break;
+                case '?':  // help
                     printf("<addr>               Dump a byte from given address\r\n");
                     printf("<addr>.<addr>        Dump multiple bytes from given address range\r\n");
                     printf("<addr>:<byte> ...    Write one or more byte to given address\r\n");
@@ -138,6 +140,9 @@ static int parse_line(char *buf, int buflen)
                 break;
             case 3:
                 ((void (*)(void))addr)();
+                break;
+            case 4:
+                ehbcfw_storage_read_sectors_lba(7, addr, 1, (void*)0x10000);
                 break;
             default:
                 printf("?UNKNOWN CHAR\r\n");

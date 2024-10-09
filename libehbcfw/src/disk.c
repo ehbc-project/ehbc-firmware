@@ -1,11 +1,6 @@
 #include <libehbcfw/disk.h>
 
 const struct chs ata5_geom = { 16383, 16, 63 };
-const struct chs floppy_5_25_dsdd_geom = { 40, 2, 9 };
-const struct chs floppy_5_25_dshd_geom = { 80, 2, 15 };
-const struct chs floppy_3_5_dsdd_geom = { 80, 2, 9 };
-const struct chs floppy_3_5_dshd_geom = { 80, 2, 18 };
-const struct chs floppy_3_5_dsed_geom = { 80, 2, 36 };
 
 struct chs lba_to_chs(lba_t lba, const struct chs *geom)
 {

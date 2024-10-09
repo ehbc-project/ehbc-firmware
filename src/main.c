@@ -10,10 +10,13 @@
 #include "hw/vga.h"
 #include "hw/ps2kbms.h"
 #include "hw/mc68681.h"
+#include "hw/floppy.h"
 #include "hw/rtc.h"
 #include "memmap.h"
+#include "fs/fat.h"
 
 extern struct device *const mc68681_device;
+extern struct device *const floppy_device;
 
 void main(void)
 {
@@ -79,6 +82,33 @@ void main(void)
         map = map->next;
     }
     printf("+----------+----------+------------+-------+\r\n");
+
+    struct fat_filesystem fs;
+
+    if (fat_mount(&fs, 7)) {
+        printf("FAT Mount Failed\n");
+    }
+
+    static const char *fat_type[] = {
+        "UNKNOWN", "FAT12", "FAT16", "FAT32"
+    };
+
+    printf("Filesystem: %s\r\n", fat_type[fs.fat_type]);
+    printf("Label: %11s\r\n", fs.volume_label);
+
+    struct fat_dir dir;
+    struct fat_dir_iter iter;
+    if (!fat_rootdir_open(&fs, &dir) && !fat_dir_iter_start(&dir, &iter)) {
+        while (!fat_dir_iter_next(&iter)) {
+            printf("- Entry: %s\r\n", iter.filename);
+        }
+    }
+
+    struct fat_file file;
+    if (!fat_file_open(&dir, &file, "BASIC.BIN")) {
+        printf("BASIC.BIN Found. Loading... (12828 bytes)\r\n");
+        fat_file_read(&file, (void*)0x20000, 12828, 1);
+    }
 
     ehbcfw_aio_flush_rx(0);
 

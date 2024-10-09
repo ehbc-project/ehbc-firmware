@@ -56,6 +56,10 @@ static struct device_ata ata = {
     .port_ctrl = 0x03F4,
 };
 
+static struct device_fdc fdc = {
+    .port = 0x03F0,
+};
+
 struct device builtin_devices[] = {
     {   // mc68681 channel A
         .class = DC_AIO,
@@ -155,7 +159,11 @@ struct device builtin_devices[] = {
         .get_vendor = floppy_get_vendor,
         .probe = floppy_drive0_probe,
         .reset = floppy_drive0_reset,
-        .storage_ops = { NULL, },
+        .storage_ops = {
+            .read_sectors_chs = floppy_drive0_read_sectors_chs,
+            .read_sectors_lba = floppy_drive0_read_sectors_lba,
+        },
+        .param = &fdc,
     },
     {
         .class = DC_STORAGE,
@@ -164,6 +172,7 @@ struct device builtin_devices[] = {
         .probe = floppy_drive1_probe,
         .reset = floppy_drive1_reset,
         .storage_ops = { NULL, },
+        .param = &fdc,
     },
     {
         .class = DC_RTC,
@@ -183,6 +192,7 @@ struct device builtin_devices[] = {
 };
 
 struct device *const mc68681_device = &builtin_devices[0];
+struct device *const floppy_device = &builtin_devices[7];
 
 static void init_devices(void)
 {
@@ -234,6 +244,62 @@ static void init_memmap(void)
     set_memory_map_head(memmap);
 }
 
+__attribute__((packed))
+struct mc68440_channel_regs {
+    hwreg8_t csr, cer;
+    hwreg16_t reserved0;
+    hwreg8_t dcr, ocr;
+    hwreg8_t scr, ccr;
+    hwreg16_t reserved1;
+    hwreg16_t mtcr;
+    hwreg32_t mar;
+    hwreg32_t reserved2;
+    hwreg32_t dar;
+    hwreg16_t reserved3;
+    hwreg16_t btcr;
+    hwreg32_t bar;
+    hwreg32_t reserved4;
+    hwreg8_t reserved5, nivr;
+    hwreg8_t reserved6, eivr;
+    hwreg8_t reserved7, mfcr;
+    hwreg16_t reserved8;
+    hwreg8_t reserved9, cpr;
+    hwreg16_t reserved10;
+    hwreg8_t reserved11, dfcr;
+    hwreg32_t reserved12;
+    hwreg16_t reserved13;
+    hwreg8_t reserved14, bfcr;
+    hwreg32_t reserved15;
+    hwreg8_t reserved16, gcr;
+};
+
+__attribute__((packed))
+struct mc68440_regs {
+    struct mc68440_channel_regs channel[4];
+};
+
+int dmac_setup_floppy_write(const void *buf, int count)
+{
+    struct mc68440_regs *dmac0 = (void*)0xFF000300;
+    dmac0->channel[0].mar = (uint32_t)buf;
+    dmac0->channel[0].bar = (uint32_t)buf;
+    dmac0->channel[0].ocr &= ~0x80;
+    dmac0->channel[0].mtcr = count;
+    dmac0->channel[0].btcr = count;
+    return 0;
+}
+
+int dmac_setup_floppy_read(void *buf, int count)
+{
+    struct mc68440_regs *dmac0 = (void*)0xFF000300;
+    dmac0->channel[0].mar = (uint32_t)buf;
+    dmac0->channel[0].bar = (uint32_t)buf;
+    dmac0->channel[0].ocr |= 0x80;
+    dmac0->channel[0].mtcr = count;
+    dmac0->channel[0].btcr = count;
+    return 0;
+}
+
 __attribute__((constructor))
 static void init_system(void)
 {
@@ -241,7 +307,7 @@ static void init_system(void)
     mmio_write_8(0x10, 0x00);  // irq0= disabled    irq1= disabled
     mmio_write_8(0x11, 0x00);  // irq2= disabled    irq3= disabled
     mmio_write_8(0x12, 0x00);  // irq4= disabled    irq5= disabled
-    mmio_write_8(0x13, 0x00);  // irq6= disabled    irq7= disabled
+    mmio_write_8(0x13, 0xA0);  // irq6= level2      irq7= disabled
     mmio_write_8(0x14, 0x00);  // irq8= disabled    irq9= disabled
     mmio_write_8(0x15, 0x00);  // irq10=disabled    irq11=disabled
     mmio_write_8(0x16, 0x00);  // irq12=disabled    irq13=disabled
@@ -254,4 +320,38 @@ static void init_system(void)
     init_memmap();
 
     init_devices();
+
+    // init dma controllers
+    struct mc68440_regs *dmac0 = (void*)0xFF000300;
+    // dmac0ch0: floppy dma
+    dmac0->channel[0].dcr = 0x00;       // burst, explicit m68k, 8-bit, pcl status
+    dmac0->channel[0].ocr = 0x82;       // d2m, byte, no chain, external
+    dmac0->channel[0].scr = 0x04;       // memory count up, device no count
+    dmac0->channel[0].cpr = 0x00;       // channel priority 0
+    dmac0->channel[0].mtcr = 0x01FF;    // 512 B memory transfer
+    dmac0->channel[0].btcr = 0x01FF;    // 512 B base transfer
+    dmac0->channel[0].dfcr = 0x05;      // device fc = 5
+    dmac0->channel[0].dar = 0xFE0003f4; // device address = 0xFE0003f4
+    dmac0->channel[0].mfcr = 0x05;      // memory fc = 5
+    dmac0->channel[0].mar = 0x00010000; // memory address = 0x00010000
+    dmac0->channel[0].bfcr = 0x05;      // base fc = 5
+    dmac0->channel[0].bar = 0x00010000; // base address = 0xFE0003f4
+
+    dmac0->channel[3].gcr = 0x00;       // 16 clocks, 50%
+
+    struct mc68440_regs *dmac1 = (void*)0xFF000400;
+    dmac1->channel[0].dcr = 0x08;       // burst, explicit, 16-bit, pcl status
+    dmac1->channel[0].ocr = 0x90;       // d2m, word, no chain, internal, limited rate
+    dmac1->channel[0].scr = 0x04;       // memory count up, device no count
+    dmac1->channel[0].cpr = 0x00;       // channel priority 0
+    dmac1->channel[0].mtcr = 0xFFFF;    // 64 kB memory transfer
+    dmac1->channel[0].btcr = 0xFFFF;    // 64 kB base transfer
+    dmac1->channel[0].dfcr = 0x05;      // device fc = 5
+    dmac1->channel[0].dar = 0xFD000004; // device address = 0x00000004
+    dmac1->channel[0].mfcr = 0x05;      // memory fc = 5
+    dmac1->channel[0].mar = 0x00010000; // memory address = 0x00010000
+    dmac1->channel[0].bfcr = 0x05;      // base fc = 5
+    dmac1->channel[0].bar = 0x00010000; // base address = 0x00010000
+
+    dmac1->channel[3].gcr = 0x00;       // 16 clocks, 50%
 }

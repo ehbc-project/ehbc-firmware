@@ -1,6 +1,0 @@
-#ifndef __ASM_GENERIC_PROCESSOR_H__
-#define __ASM_GENERIC_PROCESSOR_H__
-
-
-
-#endif // __ASM_GENERIC_PROCESSOR_H__

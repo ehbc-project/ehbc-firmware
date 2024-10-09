@@ -66,6 +66,18 @@ static long syscall_handler_storage(const struct syscall_args *args)
     if (dev->class != DC_STORAGE) return 0;
 
     switch (args->d[0] & 0xFFFF) {
+        case 3: {
+            struct chs chs = {
+                .cylinder = (args->d[2] >> 6) & 0x3FF,
+                .head = (args->d[2] >> 16) & 0xFF,
+                .sector = args->d[2] & 0x3F,
+            };
+            return dev->storage_ops.read_sectors_chs(dev, chs, (args->d[1] >> 8) & 0xFF, (void*)args->d[3]);
+        }
+        case 6: {
+            lba_t lba = (((lba_t)(args->d[1] >> 16) & 0xFFFF) << 32) | args->d[2];
+            return dev->storage_ops.read_sectors_lba(dev, lba, (args->d[1] >> 8) & 0xFF, (void*)args->d[3]);
+        }
         default:
             break;
     }

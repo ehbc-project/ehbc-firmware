@@ -1,9 +1,8 @@
-#include "basic/mpool.h"
+#include "mpool.h"
 
 #include <string.h>
 #include <stdint.h>
 #include <macros.h>
-#include "debug.h"
 
 // bitmap memory pool
 
@@ -93,8 +92,6 @@ void *mpool_alloc(unsigned long size)
             set_bitmap(i, MSLOT_USING);
         }
     }
-
-    debug_printf("Alloc: size=%lu, slots=%lu\n", size, required_slots);
 
     return slot_begin_ptr;
 }

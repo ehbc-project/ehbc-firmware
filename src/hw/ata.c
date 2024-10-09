@@ -138,11 +138,11 @@
 
 #define IDE_TIMEOUT 1048576
 
-#define ATA_IO_READ(dev, reg) io_read_8(((struct device_ata*)(dev))->port_io + (reg))
-#define ATA_IO_WRITE(dev, reg, data) io_write_8(((struct device_ata*)(dev))->port_io + (reg), data)
+#define ATA_IO_READ(dev, reg) io_read_8(((struct device_ata*)(dev)->param)->port_io + (reg))
+#define ATA_IO_WRITE(dev, reg, data) io_write_8(((struct device_ata*)(dev)->param)->port_io + (reg), data)
 
-#define ATA_CTRL_READ(dev, reg) io_read_8(((struct device_ata*)(dev))->port_ctrl + (reg))
-#define ATA_CTRL_WRITE(dev, reg, data) io_write_8(((struct device_ata*)(dev))->port_ctrl + (reg), data)
+#define ATA_CTRL_READ(dev, reg) io_read_8(((struct device_ata*)(dev)->param)->port_ctrl + (reg))
+#define ATA_CTRL_WRITE(dev, reg, data) io_write_8(((struct device_ata*)(dev)->param)->port_ctrl + (reg), data)
 
 static int powerup_await_non_bsy(struct device *dev)
 {

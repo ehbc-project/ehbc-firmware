@@ -25,6 +25,8 @@ __init_arch::
     BRA         .loop_data
 .end_data:
 
+    ANDI.W      #$F1FF,SR               ; enable interrupt
+
     ; run ctors
     LEA         __init_array_start,A2
     LEA         __init_array_end,A3
@@ -35,8 +37,6 @@ __init_arch::
     JSR         (A4)
     BRA         .loop_ctors
 .end_ctors:
-
-    ANDI.W      #$F1FF,SR               ; enable interrupt
 
     ; call main
     JSR         main
