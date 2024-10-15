@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-add_library(resources STATIC VGA8.F16.obj HELOWRLD.EFW.obj)
+add_library(resources STATIC VGA8.F16.obj)
 set_target_properties(resources PROPERTIES LINKER_LANGUAGE C)
 
 add_custom_command(

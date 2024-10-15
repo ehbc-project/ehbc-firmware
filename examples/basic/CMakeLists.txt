@@ -38,7 +38,7 @@ target_include_directories(example_basic PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(example_basic PUBLIC libehbcfw::libehbcfw)
 target_link_options(example_basic PUBLIC -T "${CMAKE_SOURCE_DIR}/libehbcfw/arch/m68k/proto1/ldscript.x")
 
-add_custom_target(example_basic_bin ALL
+add_custom_target(example_basic_bin
     COMMAND ${CMAKE_OBJCOPY} -O binary "$<TARGET_FILE:example_basic>" BASIC.BIN
     DEPENDS example_basic
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -47,7 +47,7 @@ add_custom_target(example_basic_bin ALL
 if (DD STREQUAL "DD-NOTFOUND" OR MFORMAT STREQUAL "MFORMAT-NOTFOUND" OR MCOPY STREQUAL "MCOPY-NOTFOUND")
     message(NOTICE "The dd, mformat, and mcopy commands required to create a disk image are missing. Disk image target is not generated.")
 else()
-    add_custom_target(example_image_basic ALL
+    add_custom_target(example_image_basic
         COMMAND ${DD} if=/dev/zero of=floppy.img bs=1024 count=1440
         COMMAND ${MFORMAT} -i floppy.img
         COMMAND ${MCOPY} -i floppy.img BASIC.BIN ::/

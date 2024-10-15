@@ -1,0 +1,25 @@
+                     EHBC Firmware Configuration Utility
+  Overview  Standard  Advanced  Power  Boot  Utility  Exit
++-------------------------------------------------------+----------------------+
+|                                                       |         Help         |
+|   Non-selectable Entry        Value                   |                      |
+|                                                       |                      |
+| > Selected Entry Without Value                        |                      |
+| > Selected Entry With Value   [Value]                 |                      |
+|   Unselected Entry Without Value                      |                      |
+|   Unselected Entry With Value [Value]                 |                      |
+|                                                       |                      |
+|                                                       |                      |
+|                                                       |                      |
+|                                                       |                      |
+|                                                       |                      |
+|                                                       |                      |
+|                                                       |                      |
+|                                                       |                      |
+|                                                       |                      |
+|                                                       |                      |
++-------------------------------------------------------+----------------------+
+| ><  Select Tab     ^v  Select Entry   Enter Select        +/-  Change Option |
+| F1  General Help   F3  Use Default    F10   Save & Exit   ESC  Exit          |
++-------------------------------------------------------+----------------------+
+                              Version x.x.xxxx

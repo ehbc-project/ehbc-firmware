@@ -60,12 +60,12 @@ add_subdirectory(rsrc)
 add_subdirectory(examples)
 
 # Additional Targets
-add_custom_target(romfs_image ALL
-    COMMAND "${CMAKE_BINARY_DIR}/utils/romfs/mkromfs"
-    DEPENDS util_romfs
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    COMMENT "Creating ROM filesystem image")
-add_dependencies(firmware romfs_image)
+# add_custom_target(romfs_image
+#     COMMAND "${CMAKE_BINARY_DIR}/utils/romfs/mkromfs"
+#     DEPENDS util_romfs
+#     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+#     COMMENT "Creating ROM filesystem image")
+# add_dependencies(firmware romfs_image)
 
 add_custom_target(rom_image ALL
     COMMAND ${CMAKE_OBJCOPY} -O binary "$<TARGET_FILE:firmware>" firmware.bin
@@ -73,7 +73,7 @@ add_custom_target(rom_image ALL
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
     COMMENT "Creating binary file")
 
-add_custom_target(elfinfo ALL
+add_custom_target(elfinfo
     COMMAND ${CMAKE_OBJDUMP} -xdS "$<TARGET_FILE:firmware>" > firmware.objdump
     DEPENDS firmware
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"

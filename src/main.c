@@ -5,14 +5,14 @@
 
 #include <asm/io.h>
 
-#include "device.h"
 #include "types.h"
+#include "device.h"
+#include "memmap.h"
 #include "hw/vga.h"
 #include "hw/ps2kbms.h"
 #include "hw/mc68681.h"
 #include "hw/floppy.h"
 #include "hw/rtc.h"
-#include "memmap.h"
 #include "fs/fat.h"
 
 extern struct device *const mc68681_device;
