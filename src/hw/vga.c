@@ -344,28 +344,29 @@ void vga_scroll_area(struct device *dev, int amount, int attr, int top, int bott
 
     int clear_start, clear_end;
     
-    if (amount > 0) {
+    if (amount > 0) {  // scroll up
         for (int i = top + amount; i <= bottom; i++) {
             memcpy(ptr + (i - amount) * screen_width + left, ptr + i * screen_width + left, (right - left + 1) << 1);
         }
         clear_start = bottom - amount + 1;
         clear_end = bottom;
-    } else if (amount < 0) {
+    } else if (amount < 0) {  // scroll down
         for (int i = bottom + amount; i >= top; i--) {
             memcpy(ptr + (i - amount) * screen_width + left, ptr + i * screen_width + left, (right - left + 1) << 1);
         }
         clear_start = top;
         clear_end = top - amount - 1;
-    } else {
+    } else {  // clear
         clear_start = top;
         clear_end = bottom;
     }
 
+    // clear screen
     for (int i = clear_start; i <= clear_end; i++) {
         for (int j = left; j <= right; j++) {
-            if (attr < 0) {
+            if (attr < 0) {  // attribute is not specified
                 ptr[i * screen_width + j] &= 0x00FF;
-            } else {
+            } else {  // attribute is specified
                 ptr[i * screen_width + j] = attr & 0xFF;
             }
         }

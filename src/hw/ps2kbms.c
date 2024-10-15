@@ -11,25 +11,26 @@
 #define I8042_STATUS            0x0064
 
 // Standard commands
-#define I8042_CMD_CTL_RCTR      0x0120
-#define I8042_CMD_CTL_WCTR      0x1060
-#define I8042_CMD_CTL_TEST      0x01aa
+//      command                 send        recv       command
+#define I8042_CMD_CTL_RCTR      ((0 << 12) | (1 << 8) | 0x20)
+#define I8042_CMD_CTL_WCTR      ((1 << 12) | (0 << 8) | 0x60)
+#define I8042_CMD_CTL_TEST      ((0 << 12) | (1 << 8) | 0xaa)
 
-#define I8042_CMD_KBD_TEST      0x01ab
-#define I8042_CMD_KBD_DISABLE   0x00ad
-#define I8042_CMD_KBD_ENABLE    0x00ae
+#define I8042_CMD_KBD_TEST      ((0 << 12) | (1 << 8) | 0xab)
+#define I8042_CMD_KBD_DISABLE   ((0 << 12) | (0 << 8) | 0xad)
+#define I8042_CMD_KBD_ENABLE    ((0 << 12) | (0 << 8) | 0xae)
 
-#define I8042_CMD_AUX_DISABLE   0x00a7
-#define I8042_CMD_AUX_ENABLE    0x00a8
-#define I8042_CMD_AUX_SEND      0x10d4
+#define I8042_CMD_AUX_DISABLE   ((0 << 12) | (0 << 8) | 0xa7)
+#define I8042_CMD_AUX_ENABLE    ((0 << 12) | (0 << 8) | 0xa8)
+#define I8042_CMD_AUX_SEND      ((1 << 12) | (0 << 8) | 0xd4)
 
 // Keyboard commands
-#define ATKBD_CMD_SETLEDS       0x10ed
-#define ATKBD_CMD_SSCANSET      0x10f0
-#define ATKBD_CMD_GETID         0x02f2
-#define ATKBD_CMD_ENABLE        0x00f4
-#define ATKBD_CMD_RESET_DIS     0x00f5
-#define ATKBD_CMD_RESET_BAT     0x01ff
+#define ATKBD_CMD_SETLEDS       ((1 << 12) | (0 << 8) | 0xed)
+#define ATKBD_CMD_SSCANSET      ((1 << 12) | (0 << 8) | 0xf0)
+#define ATKBD_CMD_GETID         ((0 << 12) | (2 << 8) | 0xf2)
+#define ATKBD_CMD_ENABLE        ((0 << 12) | (0 << 8) | 0xf4)
+#define ATKBD_CMD_RESET_DIS     ((0 << 12) | (0 << 8) | 0xf5)
+#define ATKBD_CMD_RESET_BAT     ((0 << 12) | (1 << 8) | 0xff)
 
 // Mouse commands
 #define PSMOUSE_CMD_SETSCALE11  0x00e6
@@ -59,6 +60,9 @@
 #define I8042_CTR_KBDDIS        0x10
 #define I8042_CTR_AUXDIS        0x20
 #define I8042_CTR_XLATE         0x40
+
+#define PS2_RET_ACK 0xFA
+#define PS2_RET_NAK 0xFE
 
 #define I8042_TIMEOUT           100000
 #define I8042_BUFSIZE           16
@@ -91,7 +95,7 @@ static int i8042_flush()
     return 1;
 }
 
-static int i8042_command(int command, uint8_t *param)
+static int i8042_command(uint16_t command, uint8_t *param)
 {
     int recv = (command >> 8) & 0xF;
     int send = (command >> 12) & 0xF;
@@ -127,9 +131,6 @@ static int i8042_aux_write(uint8_t c)
     return i8042_command(I8042_CMD_AUX_SEND, &c);
 }
 
-#define PS2_RET_ACK 0xFA
-#define PS2_RET_NAK 0xFE
-
 uint8_t ps2_ctr = I8042_CTR_KBDDIS | I8042_CTR_AUXDIS;
 
 static int ps2_recvbyte(int aux, int needack, int timeout)
@@ -164,7 +165,7 @@ static int ps2_sendbyte(int aux, uint8_t command, int timeout)
     return 0;
 }
 
-static int ps2_command(int aux, int command, uint8_t *param)
+static int ps2_command(int aux, uint16_t command, uint8_t *param)
 {
     int recv = (command >> 8) & 0xf;
     int send = (command >> 12) & 0xf;
@@ -245,12 +246,12 @@ fail:
     return ret;
 }
 
-int ps2_kb_command(int command, uint8_t *param)
+int ps2_kb_command(uint16_t command, uint8_t *param)
 {
     return ps2_command(0, command, param);
 }
 
-int ps2_ms_command(int command, uint8_t* param)
+int ps2_ms_command(uint16_t command, uint8_t* param)
 {
     return ps2_command(1, command, param);
 }
@@ -277,12 +278,22 @@ void ps2kbms_poll()
     }
 }
 
-const char *ps2kbms_get_name(struct device *dev)
+const char *ps2kb_get_name(struct device *dev)
 {
-    return "Generic PS/2 Keyboard or Mouse";
+    return "Generic PS/2 Keyboard";
 }
 
-const char *ps2kbms_get_vendor(struct device *dev)
+const char *ps2kb_get_vendor(struct device *dev)
+{
+    return "Unknown";
+}
+
+const char *ps2ms_get_name(struct device *dev)
+{
+    return "Generic PS/2 Mouse";
+}
+
+const char *ps2ms_get_vendor(struct device *dev)
 {
     return "Unknown";
 }

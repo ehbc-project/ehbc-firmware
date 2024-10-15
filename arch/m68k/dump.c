@@ -5,15 +5,13 @@
 
 #include "debug.h"
 
-
-__attribute__((packed))
 struct reg_dump {
     void *sp;
     uint32_t d[8];
     void *a[6];
 };
 
-const char* exception_name[] = {
+static const char* exception_name[] = {
     NULL, NULL,
     "Bus Error",
     "Address Error",

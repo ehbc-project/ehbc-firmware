@@ -490,6 +490,12 @@ int fat_mount(struct fat_filesystem *fs, int diskid)
 
     const struct fat_bpb_sector* bpb = (void*)fs->databuf;
 
+    /* check signature */
+    if (CONV_LE_16(bpb->signature) != 0xAA55) {
+        return 1;
+    }
+
+    /* get information */
     fs->sector_size = CONV_LE_16(bpb->bytes_per_sector);
     fs->sectors_per_cluster = bpb->sectors_per_cluster;
     fs->cluster_size = fs->sector_size * fs->sectors_per_cluster;
@@ -536,7 +542,6 @@ int fat_mount(struct fat_filesystem *fs, int diskid)
         fs->free_clusters = CONV_LE_32(fsinfo->free_clusters);
         fs->next_free_cluster = CONV_LE_32(fsinfo->next_free_cluster);
     }
-
 
     fs->mounted = 1;
 

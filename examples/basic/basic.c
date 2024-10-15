@@ -3,11 +3,13 @@
 #include <string.h>
 #include <ctype.h>
 #include <macros.h>
-#include <libehbcfw/syscall.h>
 
-#include "mpool.h"
+#include <libehbcfw/syscall.h>
+#include <libehbcfw/mpool.h>
 
 #define MAX_LINE 80
+
+static struct mpool mpool;
 
 ////////////////////////////////////////////////////////////////////////////////
 // program line data structure section
@@ -28,7 +30,7 @@ static int create_prog_line(unsigned int line_num, const char *str)
 
     current = line_head;
     if (!line_head) {
-        current = mpool_alloc(sizeof(struct program_line) + line_len + 1);
+        current = mpool_alloc(&mpool, sizeof(struct program_line) + line_len + 1);
         line_head = current;
         next = NULL;
         prev = NULL;
@@ -45,7 +47,7 @@ static int create_prog_line(unsigned int line_num, const char *str)
         }
         next = current->next;
         prev = current;
-        current = mpool_alloc(sizeof(struct program_line) + line_len + 1);
+        current = mpool_alloc(&mpool, sizeof(struct program_line) + line_len + 1);
     }
 
     if (!current) {
@@ -95,7 +97,7 @@ static int edit_prog_line(unsigned int line_num, const char *str)
 
     unsigned int line_len = strnlen(str, MAX_LINE);
 
-    line = mpool_realloc(line, sizeof(struct program_line) + line_len + 1);
+    line = mpool_realloc(&mpool, line, sizeof(struct program_line) + line_len + 1);
     if (!line) {
         return 1;
     }
@@ -500,7 +502,7 @@ static int command_list(void)
 
 static int command_free(void)
 {
-    printf("%lu BYTES FREE\r\n", mpool_getfree());
+    printf("%lu BYTES FREE\r\n", mpool_getfree(&mpool));
 
     return 0;
 }
@@ -558,7 +560,7 @@ static int read_line(char *buf, int buflen)
                 }
                 break;
             default:
-                ehbcfw_aio_tx(0, rxbyte);
+                printf("%c", rxbyte);
                 *buf++ = rxbyte;
                 len++;
         }
@@ -598,15 +600,21 @@ static int parse_line(const char *str, unsigned int len)
     return 0;
 }
 
-void main(void)
+int main(int argc, char *argv[])
 {
-    mpool_init((void*)0x10000, 65536);
+    mpool_init(&mpool, (void*)0x18000, 32768);
 
     printf("BASIC Interpreter\r\n");
-    printf("%lu BYTES FREE\r\n", mpool_getfree());
+    printf("%lu BYTES FREE\r\n", mpool_getfree(&mpool));
 
     char linebuf[128];
     for (;;) {
-        parse_line(linebuf, read_line(linebuf, sizeof(linebuf)));
+        int len = read_line(linebuf, sizeof(linebuf));
+        if (strncasecmp("EXIT", linebuf, 5) == 0) {
+            break;
+        }
+        parse_line(linebuf, len);
     }
+
+    return 0;
 }

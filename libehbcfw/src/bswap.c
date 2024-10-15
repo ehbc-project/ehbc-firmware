@@ -1,5 +1,5 @@
 #include <bswap.h>
-#include <libehbcfw/asm/bswap.h>
+#include <asm/bswap.h>
 
 #ifndef __HAVE_ARCH_BSWAP16
 uint16_t bswap16(uint16_t val)

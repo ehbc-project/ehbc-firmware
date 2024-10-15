@@ -27,6 +27,7 @@ void main(void)
         .stop_bits = AIO_SB_1,
     };
 
+    // init video
     struct device *vga = find_device(2);
     const struct video_mode_info *mode = vga_get_mode_info(vga, 0x03);
     if (ehbcfw_video_set_mode(2, 0x03)) {
@@ -40,12 +41,15 @@ void main(void)
         fbuf_base[(i << 1) + 1] = 0x07;
     }
 
+    // init aio channel
     if (!mc68681_cha_set_param(mc68681_device, aio_param)) {
         printf("DUART OK\r\n");
     }
 
-    printf("%lld\r\n", ehbcfw_rtc_get_time(9));
+    // print current time
+    printf("Current UNIX timestamp: %lld\r\n", ehbcfw_rtc_get_time(9));
 
+    // test memory
     volatile void* memtest_ptr = (void*)0xFFFC;
     for (;;) {
         *(volatile uint32_t*)memtest_ptr = (uint32_t)memtest_ptr;
@@ -60,6 +64,7 @@ void main(void)
     }
     printf("\r\n");
 
+    // list device
     struct device *dev = get_device_list_head();
     while (dev) {
         if (dev->flags & DF_AVAILABLE) {
@@ -68,6 +73,7 @@ void main(void)
         dev = dev->next;
     }
 
+    // print memory map
     struct memmap *map = get_memory_map_head();
     printf("+----------+----------+------------+-------+\r\n");
     printf("| start    | end      | size       | flags |\r\n");
@@ -83,10 +89,10 @@ void main(void)
     }
     printf("+----------+----------+------------+-------+\r\n");
 
+    // mount floppy
     struct fat_filesystem fs;
-
     if (fat_mount(&fs, 7)) {
-        printf("FAT Mount Failed\n");
+        printf("Failed to mount FAT\r\n");
     }
 
     static const char *fat_type[] = {
@@ -96,6 +102,7 @@ void main(void)
     printf("Filesystem: %s\r\n", fat_type[fs.fat_type]);
     printf("Label: %11s\r\n", fs.volume_label);
 
+    // iterate and list directory
     struct fat_dir dir;
     struct fat_dir_iter iter;
     if (!fat_rootdir_open(&fs, &dir) && !fat_dir_iter_start(&dir, &iter)) {
@@ -104,14 +111,19 @@ void main(void)
         }
     }
 
+    // load basic interpreter to 0x20000
     struct fat_file file;
     if (!fat_file_open(&dir, &file, "BASIC.BIN")) {
-        printf("BASIC.BIN Found. Loading... (12828 bytes)\r\n");
-        fat_file_read(&file, (void*)0x20000, 12828, 1);
+        fat_file_seek(&file, 0, SEEK_END);
+        long file_size = fat_file_tell(&file);
+        fat_file_seek(&file, 0, SEEK_SET);
+        printf("BASIC.BIN Found. Loading... (%ld bytes)\r\n", file_size);
+        fat_file_read(&file, (void*)0x20000, file_size, 1);
     }
 
     ehbcfw_aio_flush_rx(0);
 
+    // run machine code monitor
     extern void run_monitor(void);
     run_monitor();
 }

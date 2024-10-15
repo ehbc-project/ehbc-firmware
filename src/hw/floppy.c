@@ -29,33 +29,33 @@
 #define FDC_DOR_DSEL_MASK   0x03    // "Select" drive number for next access
 
 //      command name        irq wait    response     param      opcode
-#define CMD_CONFIGURE       (0 << 16) | (0 << 12)  | (3 << 8) | 0x13
-#define CMD_DUMPREG         (1 << 16) | (10 << 12) | (0 << 8) | 0x0E
-#define CMD_FORMAT_TRACK    (1 << 16) | (7 << 12)  | (5 << 8) | 0x0D
-#define CMD_LOCK            (1 << 16) | (1 << 12)  | (0 << 8) | 0x94
-#define CMD_UNLOCK          (1 << 16) | (1 << 12)  | (0 << 8) | 0x14
-#define CMD_MODE            (1 << 16) | (0 << 12)  | (4 << 8) | 0x01
-#define CMD_NSC             (0 << 16) | (1 << 12)  | (0 << 8) | 0x18
-#define CMD_PERPENDICULAR   (1 << 16) | (0 << 12)  | (1 << 8) | 0x12
-#define CMD_READ_SECTOR     (1 << 16) | (7 << 12)  | (8 << 8) | 0x06
-#define CMD_READ_DELETED    (1 << 16) | (7 << 12)  | (8 << 8) | 0x0C
-#define CMD_READ_ID         (1 << 16) | (7 << 12)  | (1 << 8) | 0x0A
-#define CMD_READ_TRACK      (1 << 16) | (7 << 12)  | (8 << 8) | 0x02
-#define CMD_RECALIBRATE     (1 << 16) | (0 << 12)  | (1 << 8) | 0x07
-#define CMD_RSEEK_IN        (1 << 16) | (0 << 12)  | (2 << 8) | 0x87
-#define CMD_RSEEK_OUT       (1 << 16) | (0 << 12)  | (2 << 8) | 0xC7
-#define CMD_CMP_EQ          (1 << 16) | (7 << 12)  | (8 << 8) | 0x11
-#define CMD_CMP_EQ_HIGH     (1 << 16) | (7 << 12)  | (8 << 8) | 0x1D
-#define CMD_CMP_EQ_LOW      (1 << 16) | (7 << 12)  | (8 << 8) | 0x19
-#define CMD_SEEK            (1 << 16) | (0 << 12)  | (2 << 8) | 0x0F
-#define CMD_SENSE_STATUS    (1 << 16) | (1 << 12)  | (1 << 8) | 0x04
-#define CMD_SENSE_IRQ       (0 << 16) | (2 << 12)  | (0 << 8) | 0x08
-#define CMD_SET_TRACK       (1 << 16) | (1 << 12)  | (2 << 8) | 0x21
-#define CMD_SPECIFY         (0 << 16) | (0 << 12)  | (2 << 8) | 0x03
-#define CMD_VERIFY          (1 << 16) | (7 << 12)  | (8 << 8) | 0x16
-#define CMD_VERSION         (0 << 16) | (1 << 12)  | (0 << 8) | 0x10
-#define CMD_WRITE_SECTOR    (1 << 16) | (7 << 12)  | (8 << 8) | 0x05
-#define CMD_WRITE_DELETED   (1 << 16) | (7 << 12)  | (8 << 8) | 0x09
+#define CMD_CONFIGURE       ((0 << 16) | (0 << 12)  | (3 << 8) | 0x13)
+#define CMD_DUMPREG         ((1 << 16) | (10 << 12) | (0 << 8) | 0x0E)
+#define CMD_FORMAT_TRACK    ((1 << 16) | (7 << 12)  | (5 << 8) | 0x0D)
+#define CMD_LOCK            ((1 << 16) | (1 << 12)  | (0 << 8) | 0x94)
+#define CMD_UNLOCK          ((1 << 16) | (1 << 12)  | (0 << 8) | 0x14)
+#define CMD_MODE            ((1 << 16) | (0 << 12)  | (4 << 8) | 0x01)
+#define CMD_NSC             ((0 << 16) | (1 << 12)  | (0 << 8) | 0x18)
+#define CMD_PERPENDICULAR   ((1 << 16) | (0 << 12)  | (1 << 8) | 0x12)
+#define CMD_READ_SECTOR     ((1 << 16) | (7 << 12)  | (8 << 8) | 0x06)
+#define CMD_READ_DELETED    ((1 << 16) | (7 << 12)  | (8 << 8) | 0x0C)
+#define CMD_READ_ID         ((1 << 16) | (7 << 12)  | (1 << 8) | 0x0A)
+#define CMD_READ_TRACK      ((1 << 16) | (7 << 12)  | (8 << 8) | 0x02)
+#define CMD_RECALIBRATE     ((1 << 16) | (0 << 12)  | (1 << 8) | 0x07)
+#define CMD_RSEEK_IN        ((1 << 16) | (0 << 12)  | (2 << 8) | 0x87)
+#define CMD_RSEEK_OUT       ((1 << 16) | (0 << 12)  | (2 << 8) | 0xC7)
+#define CMD_CMP_EQ          ((1 << 16) | (7 << 12)  | (8 << 8) | 0x11)
+#define CMD_CMP_EQ_HIGH     ((1 << 16) | (7 << 12)  | (8 << 8) | 0x1D)
+#define CMD_CMP_EQ_LOW      ((1 << 16) | (7 << 12)  | (8 << 8) | 0x19)
+#define CMD_SEEK            ((1 << 16) | (0 << 12)  | (2 << 8) | 0x0F)
+#define CMD_SENSE_STATUS    ((1 << 16) | (1 << 12)  | (1 << 8) | 0x04)
+#define CMD_SENSE_IRQ       ((0 << 16) | (2 << 12)  | (0 << 8) | 0x08)
+#define CMD_SET_TRACK       ((1 << 16) | (1 << 12)  | (2 << 8) | 0x21)
+#define CMD_SPECIFY         ((0 << 16) | (0 << 12)  | (2 << 8) | 0x03)
+#define CMD_VERIFY          ((1 << 16) | (7 << 12)  | (8 << 8) | 0x16)
+#define CMD_VERSION         ((0 << 16) | (1 << 12)  | (0 << 8) | 0x10)
+#define CMD_WRITE_SECTOR    ((1 << 16) | (7 << 12)  | (8 << 8) | 0x05)
+#define CMD_WRITE_DELETED   ((1 << 16) | (7 << 12)  | (8 << 8) | 0x09)
 
 #define CMD_FLAG_MT         0x80
 #define CMD_FLAG_MFM        0x40
@@ -493,9 +493,11 @@ static int floppy_read(struct device *dev, int drive, struct chs chs, int count,
     // chs hack
     int head = chs.cylinder & 1;
     chs.cylinder &= ~1;
-    chs.cylinder |= chs.head & 1;
+    chs.cylinder >>= 1;
+    if (chs.head) chs.cylinder += finfo_table[4].chs.cylinder >> 1;
     chs.head = head;
 
+    // prepare floppy
     int ret = floppy_prepare(dev, drive, chs.cylinder);
     if (ret) return -1;
 

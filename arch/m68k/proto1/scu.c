@@ -1,10 +1,9 @@
-#include <stdint.h>
+#include "proto1/scu.h"
 
-#include "mmio.h"
-
-void scu_power_off()
+void scu_power_off(void)
 {
-    mmio_write_8(0x03, 0x80);  // PMCR, power off
+    struct scu_regs *scu = (void*)0xFF000000;
+    scu->pcr = 0x80;
 }
 
 void scu_change_pclk()

@@ -1,10 +1,10 @@
-#include "types.h"
-#include "hw/mc68681.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <libehbcfw/syscall.h>
+
+#include "types.h"
+#include "exec.h"
 
 static int read_line(char *buf, int buflen)
 {
@@ -139,7 +139,7 @@ static int parse_line(char *buf, int buflen)
                 *(uint8_t*)start_addr++ = addr;
                 break;
             case 3:
-                ((void (*)(void))addr)();
+                printf("Program terminated with code %d\r\n", exec((void*)addr));
                 break;
             case 4:
                 ehbcfw_storage_read_sectors_lba(7, addr, 1, (void*)0x10000);

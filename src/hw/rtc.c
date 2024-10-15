@@ -10,7 +10,6 @@
 
 #include <asm/io.h>
 
-
 #define CMOS_INDEX        0x0070
 #define CMOS_DATA         0x0071
 
@@ -84,9 +83,9 @@ const char *rtc_get_vendor(struct device *dev)
 
 int rtc_reset(struct device *dev)
 {
-    rtc_write(CMOS_STATUS_A, 0x26);
+    rtc_write(CMOS_STATUS_A, 0x26);  // xtal freq 32768 hz, irq freq 1024 kHz
     uint8_t val = rtc_read(CMOS_STATUS_B);
-    val &= RTC_B_DSE;
+    val &= ~RTC_B_DSE;
     val |= RTC_B_24HR;
     rtc_write(CMOS_STATUS_B,  val);
     rtc_read(CMOS_STATUS_C);

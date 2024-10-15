@@ -2,11 +2,23 @@
 #include <stddef.h>
 
 #include "device.h"
-#include "hw/vga.h"
+#include "exec.h"
 
 struct syscall_args {
     long d[5];
 };
+
+static long syscall_handler_boot(const struct syscall_args *args)
+{
+    switch (args->d[0] & 0xFFFF) {
+        case 0:
+            exec_end(args->d[1]);
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
 
 static long syscall_handler_aio(const struct syscall_args *args)
 {
@@ -37,7 +49,7 @@ static long syscall_handler_video(const struct syscall_args *args)
 
     switch (args->d[0] & 0xFFFF) {
         case 0:
-            return vga_set_mode(dev, (args->d[1] >> 8) & 0xFFFF);
+            return dev->video_ops.set_mode(dev, (args->d[1] >> 8) & 0xFFFF);
         case 3:
             dev->video_ops.set_cursor_shape(dev, (args->d[1] >> 8) & 0xFFFF);
             return 0;
@@ -102,7 +114,7 @@ static long syscall_handler_rtc(const struct syscall_args *args)
 long syscall_handler(struct syscall_args args) {
     switch ((args.d[0] >> 16) & 0xFFFF) {
         case 0:
-            break;
+            return syscall_handler_boot(&args);
         case 1:
             return syscall_handler_aio(&args);
         case 2:
