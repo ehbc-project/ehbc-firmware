@@ -141,4 +141,6 @@
 
 #define ERFKILL         132     /* Operation not possible due to RF-kill */
 
+extern int errno;
+
 #endif // __ERRNO_H__

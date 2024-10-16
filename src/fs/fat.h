@@ -7,10 +7,6 @@
 
 #include <libehbcfw/disk.h>
 
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
-
 #define FAT_TYPE_UNKNOWN    0
 #define FAT_TYPE_FAT12      1
 #define FAT_TYPE_FAT16      2
