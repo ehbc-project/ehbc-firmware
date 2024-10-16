@@ -69,6 +69,6 @@ struct cfgutil_entry {
 void cfgutil_add_root_window(struct cfgutil_window *win);
 void cfgutil_add_entry(struct cfgutil_window *win, struct cfgutil_entry *entry);
 
-
+void cfgutil_draw(void);
 
 #endif // __CFGUTIL_H__

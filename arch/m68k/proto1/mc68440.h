@@ -1,6 +1,8 @@
 #ifndef __M68K_PROTO1_MC68440_H__
 #define __M68K_PROTO1_MC68440_H__
 
+#include <assert.h>
+
 #include "types.h"
 
 struct mc68440_channel_regs {
@@ -35,5 +37,7 @@ struct mc68440_channel_regs {
 struct mc68440_regs {
     struct mc68440_channel_regs channel[4];
 };
+
+static_assert(sizeof(struct mc68440_regs) == 256, "Invalid MC68440 MMIO register struct size");
 
 #endif // __M68K_PROTO1_MC68440_H__

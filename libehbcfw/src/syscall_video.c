@@ -17,12 +17,23 @@ uint16_t ehbcfw_video_get_cursor_shape(int id)
 
 void ehbcfw_video_set_cursor_pos(int id, uint16_t pos)
 {
-    __syscall1(2, 5,(id & 0xFF) | (pos << 8));
+    __syscall1(2, 5, (id & 0xFF) | (pos << 8));
 }
 
 uint16_t ehbcfw_video_get_cursor_pos(int id)
 {
     return __syscall1(2, 6, id & 0xFF);
+}
+
+void ehbcfw_video_scroll_area(int id, int count, int attr, int top, int bottom, int left, int right)
+{
+    __syscall3(2, 7, (id & 0xFF) | ((count & 0xFFFF) << 8), attr, ((top & 0xFF) << 24) | ((bottom & 0xFF) << 16) | ((left & 0xFF) << 8) | (right & 0xFF));
+}
+
+
+void ehbcfw_video_write_char_attr(int id, int ch, int attr)
+{
+    __syscall1(2, 9, (id & 0xFF) | ((ch & 0xFF) << 8) | ((attr & 0xFF) << 16));
 }
 
 void ehbcfw_video_write_string(int id, const char *str, unsigned int len, int attr)

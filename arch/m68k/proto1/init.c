@@ -1,5 +1,4 @@
 #include <stdint.h>
-
 #include <macros.h>
 
 #include "device.h"

@@ -1,0 +1,9 @@
+
+00-03   Inverted CRC-32 Checksum
+04-05   Floppy Disk Type #0-#3
+06      CPU Speed & Enable Memory Burst
+07      DRAM Timing
+08      ROM Timing
+09-0A   IDE Bus Timing
+0B      ISA Bus Timing
+10-1B   IRQ Autovector Level #0-#23

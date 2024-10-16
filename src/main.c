@@ -14,6 +14,7 @@
 #include "hw/floppy.h"
 #include "hw/rtc.h"
 #include "fs/fat.h"
+#include "cfgutil.h"
 
 extern struct device *const mc68681_device;
 extern struct device *const floppy_device;
@@ -89,6 +90,8 @@ void main(void)
     }
     printf("+----------+----------+------------+-------+\r\n");
 
+    //cfgutil_draw();
+    
     // mount floppy
     struct fat_filesystem fs;
     if (fat_mount(&fs, 7)) {
@@ -113,15 +116,16 @@ void main(void)
 
     // load basic interpreter to 0x20000
     struct fat_file file;
-    if (!fat_file_open(&dir, &file, "BASIC.BIN")) {
+    if (!fat_file_open(&dir, &file, "BOOT.BIN")) {
         fat_file_seek(&file, 0, SEEK_END);
         long file_size = fat_file_tell(&file);
         fat_file_seek(&file, 0, SEEK_SET);
-        printf("BASIC.BIN Found. Loading... (%ld bytes)\r\n", file_size);
+        printf("BOOT.BIN Found. Loading... (%ld bytes)\r\n", file_size);
         fat_file_read(&file, (void*)0x20000, file_size, 1);
     }
 
     ehbcfw_aio_flush_rx(0);
+
 
     // run machine code monitor
     extern void run_monitor(void);

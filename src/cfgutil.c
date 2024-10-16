@@ -3,6 +3,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <libehbcfw/syscall.h>
+
 #define CFGUTIL_TITLE "EHBC Firmware Configuration Utility"
 #define CFGUTIL_TITLE_LEN (sizeof(CFGUTIL_TITLE) - 1)
 
@@ -70,7 +72,30 @@ void cfgutil_add_entry(struct cfgutil_window *win, struct cfgutil_entry *entry)
 
 static void cfgutil_draw_box(int top, int bottom, int left, int right)
 {
+    ehbcfw_video_set_cursor_pos(2, TERM_COL * top + left);
+    ehbcfw_video_write_char_attr(2, 0xDA, FG_WHITE | BG_BLUE);
+    for (int i = left + 1; i < right; i++) {
+        ehbcfw_video_set_cursor_pos(2, TERM_COL * top + i);
+        ehbcfw_video_write_char_attr(2, 0xC4, FG_WHITE | BG_BLUE);
+    }
+    ehbcfw_video_set_cursor_pos(2, TERM_COL * top + right);
+    ehbcfw_video_write_char_attr(2, 0xBF, FG_WHITE | BG_BLUE);
 
+    for (int i = top + 1; i < bottom; i++) {
+        ehbcfw_video_set_cursor_pos(2, TERM_COL * i + left);
+        ehbcfw_video_write_char_attr(2, 0xB3, FG_WHITE | BG_BLUE);
+        ehbcfw_video_set_cursor_pos(2, TERM_COL * i + right);
+        ehbcfw_video_write_char_attr(2, 0xB3, FG_WHITE | BG_BLUE);
+    }
+
+    ehbcfw_video_set_cursor_pos(2, TERM_COL * bottom + left);
+    ehbcfw_video_write_char_attr(2, 0xC0, FG_WHITE | BG_BLUE);
+    for (int i = left + 1; i < right; i++) {
+        ehbcfw_video_set_cursor_pos(2, TERM_COL * bottom + i);
+        ehbcfw_video_write_char_attr(2, 0xC4, FG_WHITE | BG_BLUE);
+    }
+    ehbcfw_video_set_cursor_pos(2, TERM_COL * bottom + right);
+    ehbcfw_video_write_char_attr(2, 0xD9, FG_WHITE | BG_BLUE);
 }
 
 static void cfgutil_draw_separator_vertical(int col, int top, int bottom)
@@ -85,7 +110,8 @@ static void cfgutil_draw_separator_horizontal(int row, int left, int right)
 
 static void cfgutil_print_string(int row, int col, const char *str, int len)
 {
-
+    ehbcfw_video_set_cursor_pos(2, TERM_COL * row + col);
+    ehbcfw_video_write_string(2, str, len, VA_AUTO);
 }
 
 static void cfgutil_print_string_wrap(int top, int bottom, int left, int right, const char *str)
@@ -100,7 +126,7 @@ static void cfgutil_set_attr(int top, int bottom, int left, int right, int attr)
 
 static void cfgutil_erase(int top, int bottom, int left, int right, int attr)
 {
-
+    ehbcfw_video_scroll_area(2, 0, attr, 0, TERM_ROW - 1, 0, TERM_COL - 1);
 }
 
 static void cfgutil_scroll(int top, int bottom, int left, int right, int attr, int amount)
@@ -109,14 +135,16 @@ static void cfgutil_scroll(int top, int bottom, int left, int right, int attr, i
 }
 
 static const char *const shortcut_help[] = {
-    "><  Select Tab",  "^v  Select Entry", "Enter Select",      "+/-  Change Option",
+    "\x1A\x1B  Select Tab",  "\x18\x19  Select Entry", "Enter Select",      "+/-  Change Option",
     "F1 General Help", "F3  Use Default",  "F10   Save & Exit", "ESC  Exit",
 };
 
 static void cfgutil_draw_base(void)
 {
     // erase screen
-    cfgutil_erase(0, TERM_ROW - 1, 0, TERM_COL - 1, FG_WHITE | BG_BLUE);
+    cfgutil_erase(0, 1, 0, TERM_COL - 1, FG_WHITE | BG_BLUE);
+    cfgutil_erase(2, TERM_ROW - 2, 0, TERM_COL - 1, FG_BLUE | BG_WHITE);
+    cfgutil_erase(TERM_ROW - 1, TERM_ROW - 1, 0, TERM_COL - 1, FG_WHITE | BG_BLUE);
 
     // header
     cfgutil_print_string(0, (TERM_COL - CFGUTIL_TITLE_LEN) / 2, CFGUTIL_TITLE, CFGUTIL_TITLE_LEN);
@@ -162,7 +190,7 @@ static void cfgutil_draw_window(struct cfgutil_window *win)
     int entry_index = 0;
 
     while (entry) {
-        int entry_row = entry_index - win->scroll_pos;
+        int entry_row = entry_index - win->scroll_pos + 3;
         // draw only if entry is inside the boundary
         if (entry_row >= TERM_ROW - 5) {
             break;
@@ -211,4 +239,16 @@ static void cfgutil_draw_window(struct cfgutil_window *win)
         entry = entry->next;
         entry_index++;
     }
+}
+
+void cfgutil_draw(void)
+{
+    ehbcfw_video_set_cursor_shape(2, 0x2607);
+    cfgutil_draw_base();
+
+    current = root_win_head;
+    current->selected = current->entries;
+    cfgutil_draw_menubar(root_win_head);
+    cfgutil_draw_window(root_win_head);
+    for (;;) {}
 }

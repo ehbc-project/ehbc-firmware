@@ -39,7 +39,7 @@ target_include_directories(example_basic PUBLIC libehbcfw::libehbcfw)
 target_link_options(example_basic PUBLIC -T "${CMAKE_SOURCE_DIR}/libehbcfw/arch/m68k/proto1/ldscript.x")
 
 add_custom_target(example_basic_bin
-    COMMAND ${CMAKE_OBJCOPY} -O binary "$<TARGET_FILE:example_basic>" BASIC.BIN
+    COMMAND ${CMAKE_OBJCOPY} -O binary "$<TARGET_FILE:example_basic>" BOOT.BIN
     DEPENDS example_basic
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     COMMENT "Creating binary file")
@@ -50,7 +50,7 @@ else()
     add_custom_target(example_image_basic
         COMMAND ${DD} if=/dev/zero of=floppy.img bs=1024 count=1440
         COMMAND ${MFORMAT} -i floppy.img
-        COMMAND ${MCOPY} -i floppy.img BASIC.BIN ::/
+        COMMAND ${MCOPY} -i floppy.img BOOT.BIN ::/
         DEPENDS example_basic_bin
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         COMMENT "Creating floppy disk image")

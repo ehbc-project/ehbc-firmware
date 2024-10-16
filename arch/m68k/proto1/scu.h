@@ -1,6 +1,8 @@
 #ifndef __M68K_PROTO1_SCU_H__
 #define __M68K_PROTO1_SCU_H__
 
+#include <assert.h>
+
 #include "types.h"
 
 struct scu_regs {
@@ -21,6 +23,8 @@ struct scu_regs {
         } __attribute__((aligned(1))) isr_iar;
     } __attribute__((aligned(1)));
 } __attribute__((aligned(1)));
+
+static_assert(sizeof(struct scu_regs) == 28, "Invalid SCU MMIO register struct size");
 
 void scu_power_off(void);
 

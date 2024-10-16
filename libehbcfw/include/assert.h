@@ -6,6 +6,8 @@
 
 # else
 
+#define static_assert _Static_assert
+
 __attribute__((noreturn))
 extern void __assert_fail(const char *assertion, const char *file,
     unsigned int line, const char *function);

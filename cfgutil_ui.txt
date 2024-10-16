@@ -19,7 +19,7 @@
 |                                                       |                      |
 |                                                       |                      |
 +-------------------------------------------------------+----------------------+
-| ><  Select Tab     ^v  Select Entry   Enter Select        +/-  Change Option |
-| F1  General Help   F3  Use Default    F10   Save & Exit   ESC  Exit          |
-+-------------------------------------------------------+----------------------+
+| ><  Select Tab     ^v  Select Entry   Enter Select       +/-  Change Option  |
+| F1  General Help   F3  Use Default    F10   Save & Exit  ESC  Exit           |
++------------------------------------------------------------------------------+
                               Version x.x.xxxx

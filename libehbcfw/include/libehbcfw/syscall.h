@@ -69,6 +69,8 @@ struct ehbcfw_vmode_param_table {
     int bpp;
 };
 
+#define VA_AUTO -1
+
 int ehbcfw_video_set_mode(int id, int mode);
 int ehbcfw_video_get_mode(int id);
 void ehbcfw_video_set_cursor_shape(int id, uint16_t shape);

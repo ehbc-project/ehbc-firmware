@@ -60,6 +60,12 @@ static long syscall_handler_video(const struct syscall_args *args)
             return 0;
         case 6:
             return dev->video_ops.get_cursor_pos(dev);
+        case 7:
+            dev->video_ops.scroll_area(dev, (args->d[1] >> 8) & 0xFFFF, args->d[2], (args->d[3] >> 24) & 0xFF, (args->d[3] >> 16) & 0xFF, (args->d[3] >> 8) & 0xFF, args->d[3] & 0xFF);
+            return 0;
+        case 9:
+            dev->video_ops.write_char_attr(dev, (args->d[1] >> 8) & 0xFF, (args->d[1] >> 16) & 0xFF);
+            return 0;
         case 10:
             dev->video_ops.write_string(dev, (const char*)args->d[3], (args->d[1] >> 8) & 0xFFFF, args->d[2]);
             return 0;
