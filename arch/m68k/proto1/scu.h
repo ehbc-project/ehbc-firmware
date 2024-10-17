@@ -20,9 +20,9 @@ struct scu_regs {
             hwreg8_t isr[3];
             hwreg8_t iar[7];
             hwreg8_t reserved1;
-        } __attribute__((aligned(1))) isr_iar;
-    } __attribute__((aligned(1)));
-} __attribute__((aligned(1)));
+        } isr_iar;
+    };
+};
 
 static_assert(sizeof(struct scu_regs) == 28, "Invalid SCU MMIO register struct size");
 

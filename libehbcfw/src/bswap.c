@@ -1,16 +1,16 @@
 #include <bswap.h>
 #include <asm/bswap.h>
 
-#ifndef __HAVE_ARCH_BSWAP16
-uint16_t bswap16(uint16_t val)
+#if !defined(__HAVE_ARCH_BSWAP16) && !defined(__HAVE_BUILTIN_BSWAP16)
+uint16_t _bswap16(uint16_t val)
 {
     return ((val & 0x00FF) << 8) | ((val & 0xFF00) >> 8);
 }
 
 #endif
 
-#ifndef __HAVE_ARCH_BSWAP32
-uint32_t bswap32(uint32_t val)
+#if !defined(__HAVE_ARCH_BSWAP32) && !defined(__HAVE_BUILTIN_BSWAP32)
+uint32_t _bswap32(uint32_t val)
 {
     return 
         ((val & 0x000000FF) << 24) | ((val & 0x0000FF00) << 8) |
@@ -19,8 +19,8 @@ uint32_t bswap32(uint32_t val)
 
 #endif
 
-#ifndef __HAVE_ARCH_BSWAP64
-uint64_t bswap64(uint64_t val)
+#if !defined(__HAVE_ARCH_BSWAP64) && !defined(__HAVE_BUILTIN_BSWAP64)
+uint64_t _bswap64(uint64_t val)
 {
     return 
         ((val & 0x00000000000000FF) << 56) |

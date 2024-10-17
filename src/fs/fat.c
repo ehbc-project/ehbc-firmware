@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <bswap.h>
 #include <libehbcfw/syscall.h>
+#include "debug.h"
 
 #define FAT_LFN_END_MASK        0x40
 
@@ -786,9 +787,9 @@ long fat_file_read(struct fat_file *file, void *buf, unsigned long size, unsigne
         uint32_t cluster_offs = file->cursor % fs->cluster_size;
         size_t block_read_bytes = 0;
 
-        for (;;) {
-            uint16_t cluster_max_read = fs->cluster_size - cluster_offs;
-            uint16_t block_max_read = size - block_read_bytes;
+        while (block_read_bytes < size) {
+            uint32_t cluster_max_read = fs->cluster_size - cluster_offs;
+            uint32_t block_max_read = size - block_read_bytes;
 
             read_cluster(fs, cluster_idx);
 

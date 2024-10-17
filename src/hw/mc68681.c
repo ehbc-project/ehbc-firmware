@@ -21,7 +21,7 @@ struct mc68681_regs {
     union { hwreg8_t rbb, tbb; };
     hwreg8_t ivr;
     union { hwreg8_t ip, opcr; };
-} __attribute__((aligned(1)));
+};
 
 static const uint8_t baud_configs[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x0A, 0x07, 0x08, 0x09, 0x0B, 0x0C

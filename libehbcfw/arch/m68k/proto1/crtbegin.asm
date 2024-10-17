@@ -6,6 +6,8 @@
     PUBLIC      __init_array_start
     PUBLIC      __init_array_end
     PUBLIC      __stack_end
+    PUBLIC      __heap_start
+    PUBLIC      mm_init
 
     SECTION     .text.startup
 _start::
@@ -22,6 +24,12 @@ _start::
     BRA         .loop_bss
 .end_bss:  
 
+    ; initialize mm
+    MOVE.L      #__heap_start,-(SP)
+    MOVE.L      #524288,-(SP)           ; temp value: 512k
+    JSR         mm_init
+    ADDQ.L      #8,SP
+
     ; run ctors
     LEA         __init_array_start,A2
     LEA         __init_array_end,A3
@@ -35,7 +43,7 @@ _start::
 
     MOVE.L      #0,-(SP)                ; envp
     MOVE.L      #0,-(SP)                ; argv
-    MOVE.L      #0,-(SP)                ; argc
+    MOVE.L      #1,-(SP)                ; argc
 
     JSR         main
 

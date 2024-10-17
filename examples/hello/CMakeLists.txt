@@ -13,7 +13,7 @@ find_program(MCOPY
     HINTS "/usr" "/usr/local" "/opt/homebrew" ENV PATH)
 
 # Target Configurations
-add_executable(example_hello hello.c)
+add_executable(example_hello main.c)
 set_target_properties(example_hello PROPERTIES SUFFIX ".elf")
 
 # Compile Options

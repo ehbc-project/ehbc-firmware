@@ -13,7 +13,7 @@ find_program(MCOPY
     HINTS "/usr" "/usr/local" "/opt/homebrew" ENV PATH)
 
 # Target Configurations
-add_executable(example_basic basic.c)
+add_executable(example_basic my_basic.c shell.c)
 set_target_properties(example_basic PROPERTIES SUFFIX ".elf")
 
 # Compile Options
@@ -21,8 +21,6 @@ target_compile_features(example_basic PUBLIC c_std_11)
 target_compile_features(example_basic PUBLIC cxx_std_14)
 target_compile_options(example_basic PUBLIC 
     $<$<COMPILE_LANGUAGE:C,CXX>:
-        -Werror
-        -Wall
         -Wno-unused-function
         -Wno-unused-variable
         -Wno-unused-but-set-variable

@@ -120,8 +120,12 @@ void main(void)
         fat_file_seek(&file, 0, SEEK_END);
         long file_size = fat_file_tell(&file);
         fat_file_seek(&file, 0, SEEK_SET);
+
         printf("BOOT.BIN Found. Loading... (%ld bytes)\r\n", file_size);
-        fat_file_read(&file, (void*)0x20000, file_size, 1);
+
+        uint8_t *ptr = (void*)0x10000;
+
+        fat_file_read(&file, ptr, file_size, 1);
     }
 
     ehbcfw_aio_flush_rx(0);

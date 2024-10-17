@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <time.h>
+#include <assert.h>
 
 #include <libehbcfw/disk.h>
 
@@ -64,7 +65,9 @@ union fat_time {
         uint16_t minute : 6;
         uint16_t hour : 5;
     } __attribute__((packed));
-} __attribute__((packed));
+};
+
+static_assert(sizeof(union fat_time) == 2, "Invalid fat_time size");
 
 union fat_date {
     uint16_t raw;
@@ -73,7 +76,9 @@ union fat_date {
         uint16_t month : 4;
         uint16_t year : 7;
     } __attribute__((packed));
-} __attribute__((packed));
+};
+
+static_assert(sizeof(union fat_date) == 2, "Invalid fat_date size");
 
 struct fat_direntry_file {
     char            name[FAT_SFN_NAME];
@@ -91,6 +96,8 @@ struct fat_direntry_file {
     uint32_t        size;
 } __attribute__((packed));
 
+static_assert(sizeof(struct fat_direntry_file) == 32, "Invalid fat_direntry_file size");
+
 struct fat_direntry_lfn {
     uint8_t         sequence_index;
     uint16_t        name_fragment1[5];
@@ -102,10 +109,12 @@ struct fat_direntry_lfn {
     uint16_t        name_fragment3[2];
 } __attribute__((packed));
 
+static_assert(sizeof(struct fat_direntry_lfn) == 32, "Invalid fat_direntry_file size");
+
 union fat_dir_entry {
     struct fat_direntry_lfn lfn;
     struct fat_direntry_file file;
-} __attribute__((packed));
+};
 
 struct fat_file {
     struct fat_filesystem *fs;

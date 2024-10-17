@@ -253,7 +253,7 @@ static uint8_t fdc_dor_read(struct device *dev)
 
 static void fdc_dor_write(struct device *dev, uint8_t val)
 {
-    debug_printf("dor write: %02X\n", val);
+    // debug_printf("dor write: %02X\n", val);
     FDC_IO_WRITE(dev, FDC_DOR, val);
 }
 
@@ -279,7 +279,7 @@ static int fdc_pio_command(struct device *dev, struct fdc_command_block *cmd)
     const uint8_t *cmddata = &cmd->command;
     uint8_t status;
 
-    debug_write("fdc pio command:");
+    // debug_write("fdc pio command:");
 
     // send command and parameter
     for (int i = 0; i < cmd->param_size + 1; i++) {
@@ -292,7 +292,7 @@ static int fdc_pio_command(struct device *dev, struct fdc_command_block *cmd)
             return 1;
         }
 
-        debug_printf(" %02X", *cmddata);
+        // debug_printf(" %02X", *cmddata);
 
         FDC_IO_WRITE(dev, FDC_FIFO, *cmddata++);
     }
@@ -301,7 +301,7 @@ static int fdc_pio_command(struct device *dev, struct fdc_command_block *cmd)
         fdc_wait_irq(dev);
     }
 
-    debug_write("\nresponse:");
+    // debug_write("\nresponse:");
     // receive response data
     for (int i = 0; i < cmd->response_size; i++) {
         // wait until ready
@@ -309,16 +309,16 @@ static int fdc_pio_command(struct device *dev, struct fdc_command_block *cmd)
 
         status = FDC_IO_READ(dev, FDC_MSR);
         if (!(status & 0x40)) {  // fdc error
-            debug_printf("\nstatus: %02X\n", status);
+            // debug_printf("\nstatus: %02X\n", status);
             fdc_disable(dev);
             return 1;
         }
         cmd->data[i] = FDC_IO_READ(dev, FDC_FIFO);
-        debug_printf(" %02X", cmd->data[i]);
+        // debug_printf(" %02X", cmd->data[i]);
     }
 
     status = FDC_IO_READ(dev, FDC_MSR);
-    debug_printf("\nstatus: %02X\n", status);
+    // debug_printf("\nstatus: %02X\n", status);
     if (status & 0x40) {
         fdc_disable(dev);
         return 1;
@@ -377,6 +377,7 @@ static int floppy_drive_pio_command(struct device *dev, int drive, struct fdc_co
 
 extern int dmac_setup_floppy_write(const void *buf, int count);
 extern int dmac_setup_floppy_read(void *buf, int count);
+extern int dmac_wait_floppy_transfer(void);
 
 static int floppy_drive_dma_write_command(struct device *dev, int drive, struct fdc_command_block *cmd, const void *buf, int count)
 {
@@ -385,6 +386,8 @@ static int floppy_drive_dma_write_command(struct device *dev, int drive, struct 
 
     ret = floppy_drive_pio_command(dev, drive, cmd);
     if (ret) return ret;
+
+    dmac_wait_floppy_transfer();
 
     if (cmd->data[0] & 0xC0) {
         return 1;
@@ -400,6 +403,8 @@ static int floppy_drive_dma_read_command(struct device *dev, int drive, struct f
 
     ret = floppy_drive_pio_command(dev, drive, cmd);
     if (ret) return ret;
+
+    dmac_wait_floppy_transfer();
 
     if (cmd->data[0] & 0xC0) {
         // return 1;
@@ -508,7 +513,7 @@ static int floppy_read(struct device *dev, int drive, struct chs chs, int count,
     // send read-normal-data command to controller
     uint8_t floppyid = drive;
     struct fdc_command_block cmd;
-    make_command_block(&cmd, CMD_READ_SECTOR | CMD_FLAG_MFM | CMD_FLAG_MT);
+    make_command_block(&cmd, CMD_READ_SECTOR | CMD_FLAG_MFM);
     cmd.data[0] = (chs.head << 2) | drive;
     cmd.data[1] = chs.cylinder;
     cmd.data[2] = chs.head;
@@ -520,6 +525,8 @@ static int floppy_read(struct device *dev, int drive, struct chs chs, int count,
 
     ret = floppy_drive_dma_read_command(dev, drive, &cmd, buf, count * 512);
     if (ret) return -1;
+
+    debug_printf("read chs: %d %d %d\n", chs.cylinder, chs.head, chs.sector);
 
     return count;
 }

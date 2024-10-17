@@ -7,22 +7,7 @@ PROVIDE_HIDDEN(__stack_size = 16K);
 
 SECTIONS
 {
-    .stack 0x10000 :
-    {
-        PROVIDE_HIDDEN(__stack_start = .);
-        . = __stack_size;
-        PROVIDE_HIDDEN(__stack_end = .);
-    }
-
-    .bss ALIGN(4) :
-    {
-        PROVIDE_HIDDEN(__bss_start = .);
-        *(.bss .bss.*)
-        *(COMMON)
-        PROVIDE_HIDDEN(__bss_end = .);
-    }
-
-    .text 0x20000 :
+    .text 0x10000 :
     {
         KEEP(*(.text.startup .text.startup.*))
         KEEP(*(.text .text.*))
@@ -77,4 +62,21 @@ SECTIONS
     {
         KEEP(*(.rodata .rodata.*))
     }
+
+    .bss ALIGN(16) :
+    {
+        PROVIDE_HIDDEN(__bss_start = .);
+        *(.bss .bss.*)
+        *(COMMON)
+        PROVIDE_HIDDEN(__bss_end = .);
+    }
+
+    .stack ALIGN(16) :
+    {
+        PROVIDE_HIDDEN(__stack_start = .);
+        . = __stack_size;
+        PROVIDE_HIDDEN(__stack_end = .);
+    }
+
+    PROVIDE_HIDDEN(__heap_start = .);
 }

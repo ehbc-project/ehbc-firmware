@@ -253,6 +253,7 @@ int dmac_setup_floppy_write(const void *buf, int count)
     dmac0->channel[0].ocr &= ~0x80;
     dmac0->channel[0].mtcr = count;
     dmac0->channel[0].btcr = count;
+    dmac0->channel[0].ccr |= 0x80;
     return 0;
 }
 
@@ -264,6 +265,16 @@ int dmac_setup_floppy_read(void *buf, int count)
     dmac0->channel[0].ocr |= 0x80;
     dmac0->channel[0].mtcr = count;
     dmac0->channel[0].btcr = count;
+    dmac0->channel[0].ccr = 0x80;
+    return 0;
+}
+
+int dmac_wait_floppy_transfer(void)
+{
+    struct mc68440_regs *dmac0 = (void*)0xFF000300;
+    while (!(dmac0->channel[0].csr & 0x80)) {}
+    dmac0->channel[0].ccr = 0x30;
+
     return 0;
 }
 
@@ -294,7 +305,6 @@ static void init_dmac(void)
     dmac0->channel[0].scr = 0x04;       // memory count up, device no count
     dmac0->channel[0].cpr = 0x00;       // channel priority 0
     dmac0->channel[0].mtcr = 0x01FF;    // 512 B memory transfer
-    dmac0->channel[0].btcr = 0x01FF;    // 512 B base transfer
     dmac0->channel[0].dfcr = 0x05;      // device fc = 5
     dmac0->channel[0].dar = 0xFE0003F4; // device address = 0xFE0003F4
     dmac0->channel[0].mfcr = 0x05;      // memory fc = 5
@@ -308,7 +318,6 @@ static void init_dmac(void)
     dmac0->channel[1].scr = 0x04;       // memory count up, device no count
     dmac0->channel[1].cpr = 0x00;       // channel priority 0
     dmac0->channel[1].mtcr = 0x01FF;    // 512 B memory transfer
-    dmac0->channel[1].btcr = 0x01FF;    // 512 B base transfer
     dmac0->channel[1].dfcr = 0x05;      // device fc = 5
     dmac0->channel[1].dar = 0xFE0001F0; // device address = 0xFE0001F0
     dmac0->channel[1].mfcr = 0x05;      // memory fc = 5

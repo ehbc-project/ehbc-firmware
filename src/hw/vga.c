@@ -301,6 +301,7 @@ void vga_write_ansi_tty(struct device *dev, const char* str, unsigned int len)
                 cur -= cur % screen_width;
             } break;
             case '\n': {
+                cur -= cur % screen_width;
                 if (cur / screen_width < screen_height - 1) {
                     cur += screen_width;
                 } else {

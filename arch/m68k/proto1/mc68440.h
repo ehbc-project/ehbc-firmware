@@ -31,7 +31,7 @@ struct mc68440_channel_regs {
     hwreg8_t reserved14, bfcr;
     hwreg32_t reserved15;
     hwreg8_t reserved16, gcr;
-} __attribute__((aligned(2)));
+};
 
 // in real, channel 2 and 3 are reserved.
 struct mc68440_regs {
