@@ -13,7 +13,7 @@ find_program(MCOPY
     HINTS "/usr" "/usr/local" "/opt/homebrew" ENV PATH)
 
 # Target Configurations
-add_executable(example_basic my_basic.c shell.c)
+add_executable(example_basic shell.c my_basic/my_basic.c my_basic/mb_gc.c my_basic/mb_hashtable.c my_basic/mb_list.c my_basic/mb_memory.c my_basic/mb_unicode.c my_basic/mb_lib_core.c my_basic/mb_lib_std.c my_basic/mb_lib_coll.c my_basic/mb_lib_dmm.c)
 set_target_properties(example_basic PROPERTIES SUFFIX ".elf")
 
 # Compile Options
@@ -25,11 +25,14 @@ target_compile_options(example_basic PUBLIC
         -Wno-unused-variable
         -Wno-unused-but-set-variable
         -pedantic
-        -pedantic-errors>)
+        -pedantic-errors
+        -Os>)
 target_link_libraries(example_basic gcc)
 target_link_libraries(example_basic libehbcfw)
 target_link_libraries(example_basic crtbegin)
 target_link_libraries(example_basic crtend)
+
+configure_file(config.h.in config.h)
 
 target_include_directories(example_basic PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(example_basic PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

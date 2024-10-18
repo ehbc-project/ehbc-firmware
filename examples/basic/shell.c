@@ -29,7 +29,7 @@
 #	endif /* _CRT_SECURE_NO_WARNINGS */
 #endif /* _MSC_VER */
 
-#include "my_basic.h"
+#include "my_basic/my_basic.h"
 #ifdef MB_CP_VC
 #	include <conio.h>
 #	include <crtdbg.h>
@@ -734,7 +734,7 @@ static void _list_program(const char* sn, const char* cn) {
 		for(i = 0; i < _code()->count; ++i) {
 			p = _code()->lines[i];
 			_get_unicode_bom((const char**)&p);
-			_list_one_line(false, i + 1, p);
+			_list_one_line(true, i + 1, p);
 		}
 	} else {
 		long i = 0;

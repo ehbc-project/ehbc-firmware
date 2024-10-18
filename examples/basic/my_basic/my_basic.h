@@ -26,9 +26,7 @@
 #ifndef __MY_BASIC_H__
 #define __MY_BASIC_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+#include "config.h"
 
 #if defined __EMSCRIPTEN__
 #	define MB_CP_EMSCRIPTEN
@@ -92,98 +90,39 @@ extern "C" {
 #	define MB_OS_UNKNOWN
 #endif /* OS dependent macro */
 
-#ifndef __FUNCTION__
-#   define __FUNCTION__ __func__
-#endif /* __FUNCTION__ */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
-#ifndef MBAPI
-#	define MBAPI
-#endif /* MBAPI */
-
-#ifndef MBIMPL
-#	define MBIMPL
-#endif /* MBIMPL */
-
-#ifndef MBCONST
-#	define MBCONST
-#endif /* MBCONST */
-
-#ifndef MB_SIMPLE_ARRAY
-#	define MB_SIMPLE_ARRAY
-#endif /* MB_SIMPLE_ARRAY */
-
-#ifndef MB_ENABLE_ARRAY_REF
-#	define MB_ENABLE_ARRAY_REF
-#endif /* MB_ENABLE_ARRAY_REF */
+/* Version information */
+#define MB_VER_MAJOR 1
+#define MB_VER_MINOR 2
+#define MB_VER_REVISION 2
+#define MB_VER_SUFFIX
+#define MB_VERSION ((MB_VER_MAJOR * 0x01000000) + (MB_VER_MINOR * 0x00010000) + (MB_VER_REVISION))
+#define MB_MAKE_STRINGIZE(A) #A
+#define MB_STRINGIZE(A) MB_MAKE_STRINGIZE(A)
+#if MB_VER_REVISION == 0
+#	define MB_VERSION_STRING MB_STRINGIZE(MB_VER_MAJOR.MB_VER_MINOR MB_VER_SUFFIX)
+#else /* MB_VER_REVISION == 0 */
+#	define MB_VERSION_STRING MB_STRINGIZE(MB_VER_MAJOR.MB_VER_MINOR.MB_VER_REVISION MB_VER_SUFFIX)
+#endif /* MB_VER_REVISION == 0 */
 
 #ifndef MB_MAX_DIMENSION_COUNT
 #	define MB_MAX_DIMENSION_COUNT 4
 #endif /* MB_MAX_DIMENSION_COUNT */
 
-#ifndef MB_ENABLE_COLLECTION_LIB
-#	define MB_ENABLE_COLLECTION_LIB
-#endif /* MB_ENABLE_COLLECTION_LIB */
-
-#ifndef MB_ENABLE_USERTYPE_REF
-#	define MB_ENABLE_USERTYPE_REF
-#endif /* MB_ENABLE_USERTYPE_REF */
-
-#ifdef MB_ENABLE_USERTYPE_REF
-#	ifndef MB_ENABLE_ALIVE_CHECKING_ON_USERTYPE_REF
-#		define MB_ENABLE_ALIVE_CHECKING_ON_USERTYPE_REF
-#	endif /* MB_ENABLE_ALIVE_CHECKING_ON_USERTYPE_REF */
-#endif /* MB_ENABLE_USERTYPE_REF */
-
-#ifndef MB_ENABLE_CLASS
-#	define MB_ENABLE_CLASS
-#endif /* MB_ENABLE_CLASS */
-
-#ifndef MB_ENABLE_LAMBDA
-#	define MB_ENABLE_LAMBDA
-#endif /* MB_ENABLE_LAMBDA */
-
-#ifndef MB_ENABLE_MODULE
-#	define MB_ENABLE_MODULE
-#endif /* MB_ENABLE_MODULE */
-
-#ifndef MB_ENABLE_UNICODE
-#	define MB_ENABLE_UNICODE
-#endif /* MB_ENABLE_UNICODE */
-
-#ifndef MB_ENABLE_UNICODE_ID
-#	define MB_ENABLE_UNICODE_ID
-#	if defined MB_ENABLE_UNICODE_ID && !defined MB_ENABLE_UNICODE
-#		error "Requires MB_ENABLE_UNICODE enabled."
-#	endif
-#endif /* MB_ENABLE_UNICODE_ID */
+#if defined MB_ENABLE_UNICODE_ID && !defined MB_ENABLE_UNICODE
+#	error "Requires MB_ENABLE_UNICODE enabled."
+#endif
 
 #ifndef MB_UNICODE_NEED_CONVERTING
 #	define MB_UNICODE_NEED_CONVERTING 0
 #endif /* MB_UNICODE_NEED_CONVERTING */
 
-#ifndef MB_ENABLE_FORK
-#	define MB_ENABLE_FORK
-#endif /* MB_ENABLE_FORK */
-
 #ifndef MB_GC_GARBAGE_THRESHOLD
 #	define MB_GC_GARBAGE_THRESHOLD 16
 #endif /* MB_GC_GARBAGE_THRESHOLD */
-
-#ifndef MB_ENABLE_ALLOC_STAT
-#	define MB_ENABLE_ALLOC_STAT
-#endif /* MB_ENABLE_ALLOC_STAT */
-
-#ifndef MB_ENABLE_SOURCE_TRACE
-#	define MB_ENABLE_SOURCE_TRACE
-#endif /* MB_ENABLE_SOURCE_TRACE */
-
-#ifndef MB_ENABLE_STACK_TRACE
-#	define MB_ENABLE_STACK_TRACE
-#endif /* MB_ENABLE_STACK_TRACE */
-
-#ifndef MB_ENABLE_FULL_ERROR
-#	define MB_ENABLE_FULL_ERROR
-#endif /* MB_ENABLE_FULL_ERROR */
 
 #ifndef MB_CONVERT_TO_INT_LEVEL_NONE
 #	define MB_CONVERT_TO_INT_LEVEL_NONE 0
@@ -204,13 +143,25 @@ extern "C" {
 #	define MB_PRINT_INPUT_CONTENT 0
 #endif /* MB_PRINT_INPUT_CONTENT */
 
-#ifndef MB_PREFER_SPEED
-#	define MB_PREFER_SPEED
-#endif /* MB_PREFER_SPEED */
+#ifndef __FUNCTION__
+#   define __FUNCTION__ __func__
+#endif /* __FUNCTION__ */
 
-#ifndef MB_COMPACT_MODE
-#	define MB_COMPACT_MODE
-#endif /* MB_COMPACT_MODE */
+#ifndef MBAPI
+#	define MBAPI
+#endif /* MBAPI */
+
+#ifndef MBIMPL
+#	define MBIMPL
+#endif /* MBIMPL */
+
+#ifndef MBCONST
+#	define MBCONST
+#endif /* MBCONST */
+
+#ifndef MB_SIMPLE_ARRAY
+#	define MB_SIMPLE_ARRAY
+#endif /* MB_SIMPLE_ARRAY */
 
 #ifdef MB_COMPACT_MODE
 #	pragma pack(1)
@@ -647,12 +598,7 @@ MBAPI int mb_init_array(struct mb_interpreter_t* s, void** l, mb_data_e t, int* 
 MBAPI int mb_get_array_len(struct mb_interpreter_t* s, void** l, void* a, int r, int* i);
 MBAPI int mb_get_array_elem(struct mb_interpreter_t* s, void** l, void* a, int* d, int c, mb_value_t* val);
 MBAPI int mb_set_array_elem(struct mb_interpreter_t* s, void** l, void* a, int* d, int c, mb_value_t val);
-MBAPI int mb_init_coll(struct mb_interpreter_t* s, void** l, mb_value_t* coll);
-MBAPI int mb_get_coll(struct mb_interpreter_t* s, void** l, mb_value_t coll, mb_value_t idx, mb_value_t* val);
-MBAPI int mb_set_coll(struct mb_interpreter_t* s, void** l, mb_value_t coll, mb_value_t idx, mb_value_t val);
-MBAPI int mb_remove_coll(struct mb_interpreter_t* s, void** l, mb_value_t coll, mb_value_t idx);
-MBAPI int mb_count_coll(struct mb_interpreter_t* s, void** l, mb_value_t coll, int* c);
-MBAPI int mb_keys_of_coll(struct mb_interpreter_t* s, void** l, mb_value_t coll, mb_value_t* keys, int c);
+
 MBAPI int mb_make_ref_value(struct mb_interpreter_t* s, void* val, mb_value_t* out, mb_dtor_func_t un, mb_clone_func_t cl, mb_hash_func_t hs/* = NULL*/, mb_cmp_func_t cp/* = NULL*/, mb_fmt_func_t ft/* = NULL*/);
 MBAPI int mb_get_ref_value(struct mb_interpreter_t* s, void** l, mb_value_t val, void** out);
 MBAPI int mb_ref_value(struct mb_interpreter_t* s, void** l, mb_value_t val);
@@ -668,6 +614,7 @@ MBAPI int mb_eval_routine(struct mb_interpreter_t* s, void** l, mb_value_t val, 
 MBAPI int mb_get_routine_type(struct mb_interpreter_t* s, mb_value_t val, mb_routine_type_e* y);
 
 MBAPI int mb_load_string(struct mb_interpreter_t* s, const char* l, bool_t reset/* = true*/);
+MBAPI int mb_load_file(struct mb_interpreter_t* s, const char* f);
 MBAPI int mb_run(struct mb_interpreter_t* s, bool_t clear_parser/* = true*/);
 MBAPI int mb_suspend(struct mb_interpreter_t* s, void** l);
 MBAPI int mb_schedule_suspend(struct mb_interpreter_t* s, int t);

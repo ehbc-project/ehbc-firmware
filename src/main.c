@@ -121,15 +121,31 @@ void main(void)
         long file_size = fat_file_tell(&file);
         fat_file_seek(&file, 0, SEEK_SET);
 
-        printf("BOOT.BIN Found. Loading... (%ld bytes)\r\n", file_size);
+        printf("BOOT.BIN Found. (%ld bytes)\r\n", file_size);
 
         uint8_t *ptr = (void*)0x10000;
 
-        fat_file_read(&file, ptr, file_size, 1);
+        for (int i = 0; i < 50; i++) {
+            printf("Loading... %3d%% [", i * 2);
+            for (int j = 0; j < 50; j++) {
+                printf(j < i ? "#" : " ");
+            }
+            printf("]\r");
+            fat_file_read(&file, ptr, file_size / 50, 1);
+            ptr += file_size / 50;
+        }
+        printf("Loading... 100%% [");
+        for (int j = 0; j < 50; j++) {
+            printf("#");
+        }
+        printf("]\r");
+        fat_file_read(&file, ptr, file_size % (file_size / 50), 1);
+        printf("\n");
+
+        printf("Loaded to address 0x10000.\r\n");
     }
 
     ehbcfw_aio_flush_rx(0);
-
 
     // run machine code monitor
     extern void run_monitor(void);

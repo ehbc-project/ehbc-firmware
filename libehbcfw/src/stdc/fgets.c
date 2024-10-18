@@ -12,8 +12,14 @@ char *fgets(char *str, int num, FILE *stream)
         if (ehbcfw_aio_rx(0, &rxbyte)) break;
 
         switch (rxbyte) {
+            case '\n':
+                if (len > 0 && buf[-1] == '\r') {
+                    break;
+                }
             case '\r':
                 printf("\r\n");
+                *buf++ = '\n';
+                len++;
                 goto finish;
             case '\b':
                 if (len > 0) {
@@ -27,7 +33,7 @@ char *fgets(char *str, int num, FILE *stream)
                 *buf++ = rxbyte;
                 len++;
         }
-    } while (rxbyte && len < num);
+    } while (rxbyte && len < num - 1);
 
 finish:
     *buf = 0;

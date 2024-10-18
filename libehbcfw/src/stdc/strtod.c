@@ -97,7 +97,9 @@ double strtod(const char *str, char **endptr)
         exp = -exp;
     }
 
-    ret = ((double)ival + ((double)dval * pow(10, -ddigit))) * pow(10, exp);
+    // workaround: MAME does not support fetox.x instruction
+    ret = ival;
+    // ret = ((double)ival + ((double)dval * pow(10, -ddigit))) * pow(10, exp);
 
     if (sign) {
         ret = -ret;
