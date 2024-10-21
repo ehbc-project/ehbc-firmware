@@ -434,8 +434,8 @@ static int floppy_drive_specify(struct device *dev)
 {
     struct fdc_command_block cmd;
     make_command_block(&cmd, CMD_SPECIFY);
-    cmd.data[0] = FLOPPY_SPECIFY1;
-    cmd.data[1] = FLOPPY_SPECIFY2;
+    cmd.data[0] = param_35hd.specify1;
+    cmd.data[1] = param_35hd.specify2;
     return fdc_pio_command(dev, &cmd);
 }
 
@@ -497,10 +497,17 @@ static int floppy_read(struct device *dev, int drive, struct chs chs, int count,
 {
     // chs hack
     int head = chs.cylinder & 1;
-    chs.cylinder &= ~1;
     chs.cylinder >>= 1;
     if (chs.head) chs.cylinder += finfo_table[4].chs.cylinder >> 1;
     chs.head = head;
+
+    // check geometry
+    if (chs.cylinder > param_35hd.max_track_num) {
+        return -1;
+    }
+    if (chs.sector > param_35hd.sectors_per_track) {
+        return -1;
+    }
 
     // prepare floppy
     int ret = floppy_prepare(dev, drive, chs.cylinder);
@@ -518,15 +525,15 @@ static int floppy_read(struct device *dev, int drive, struct chs chs, int count,
     cmd.data[1] = chs.cylinder;
     cmd.data[2] = chs.head;
     cmd.data[3] = chs.sector;
-    cmd.data[4] = FLOPPY_SECTOR_SIZE;
+    cmd.data[4] = param_35hd.bytes_per_sector;
     cmd.data[5] = chs.sector + count - 1;  // last sector to read on track
-    cmd.data[6] = FLOPPY_SECTOR_GAP_3_5;
+    cmd.data[6] = param_35hd.sector_gap;
     cmd.data[7] = 0xFF;
 
     ret = floppy_drive_dma_read_command(dev, drive, &cmd, buf, count * 512);
     if (ret) return -1;
 
-    debug_printf("read chs: %d %d %d\n", chs.cylinder, chs.head, chs.sector);
+    // debug_printf("read chs: %d %d %d\n", chs.cylinder, chs.head, chs.sector);
 
     return count;
 }

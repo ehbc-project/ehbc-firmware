@@ -56,8 +56,9 @@ struct video_device_ops {
 };
 
 struct keyboard_device_ops {
-    int (*wait_get_stroke)(struct device *, uint8_t *);
-    int (*get_stroke)(struct device *, uint8_t *);
+    int (*get_char)(struct device *);
+    int (*wait_get_stroke)(struct device *);
+    int (*get_stroke)(struct device *);
     uint32_t (*get_flags)(struct device *);
     void (*flush_buffer)(struct device *);
 };

@@ -123,7 +123,10 @@ struct device builtin_devices[] = {
         .get_vendor = ps2kb_get_vendor,
         .probe = ps2kbms_probe,
         .reset = ps2kbms_reset,
-        .keyboard_ops = { NULL },
+        .keyboard_ops = {
+            .get_char = ps2kb_get_key_char,
+            .get_stroke = ps2kb_get_keystroke,
+        },
         .param = &ps2kbms
     },
     {
@@ -193,6 +196,7 @@ struct device builtin_devices[] = {
 
 struct device *const mc68681_device = &builtin_devices[0];
 struct device *const floppy_device = &builtin_devices[7];
+struct device *const ps2kbms_device = &builtin_devices[3];
 
 static void init_devices(void)
 {
@@ -282,13 +286,13 @@ static void init_scu(void)
 {
     struct scu_regs *scu = (void*)0xFF000000;
     scu->ccr = 0x07;  // set clock to 33 MHz
-    scu->icr[0] = 0x00;  // irq0= disabled    irq1= disabled
+    scu->icr[0] = 0x0B;  // irq0= disabled    irq1= level3
     scu->icr[1] = 0x00;  // irq2= disabled    irq3= disabled
     scu->icr[2] = 0x00;  // irq4= disabled    irq5= disabled
     scu->icr[3] = 0xA0;  // irq6= level2      irq7= disabled
     scu->icr[4] = 0xD0;  // irq8= level5      irq9= disabled
     scu->icr[5] = 0x00;  // irq10=disabled    irq11=disabled
-    scu->icr[6] = 0x00;  // irq12=disabled    irq13=disabled
+    scu->icr[6] = 0xB0;  // irq12=level3    irq13=disabled
     scu->icr[7] = 0x00;  // irq14=disabled    irq15=disabled
     scu->icr[8] = 0xA0;  // irq16=level2      irq17=disabled
     scu->icr[9] = 0x00;  // irq18=disabled    irq19=disabled

@@ -734,7 +734,7 @@ static void _list_program(const char* sn, const char* cn) {
 		for(i = 0; i < _code()->count; ++i) {
 			p = _code()->lines[i];
 			_get_unicode_bom((const char**)&p);
-			_list_one_line(true, i + 1, p);
+			_list_one_line(false, i + 1, p);
 		}
 	} else {
 		long i = 0;
@@ -841,7 +841,7 @@ static void _show_tip(void) {
 	_printf("MY-BASIC Interpreter Shell - %s\n", mb_ver_string());
 	_printf("Copyright (C) 2011 - 2023 Tony Wang. All Rights Reserved.\n");
 	_printf("For more information, see https://github.com/paladin-t/my_basic/.\n");
-	_printf("Input HELP and hint enter to view the help information.\n");
+	_printf("Input HELP and hit enter to view the help information.\n");
 }
 
 static void _show_help(void) {

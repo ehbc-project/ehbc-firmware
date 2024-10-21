@@ -78,6 +78,26 @@ static long syscall_handler_video(const struct syscall_args *args)
     return 0;
 }
 
+static long syscall_handler_inputdev(const struct syscall_args *args)
+{
+    struct device *dev = find_device(args->d[1] & 0xFF);
+
+    switch (args->d[0] & 0xFFFF) {
+        case 0:
+            if (dev->class != DC_KEYBOARD) return 0;
+            return dev->keyboard_ops.get_char(dev);
+        case 1:
+            if (dev->class != DC_KEYBOARD) return 0;
+            return dev->keyboard_ops.wait_get_stroke(dev);
+        case 2:
+            if (dev->class != DC_KEYBOARD) return 0;
+            return dev->keyboard_ops.get_stroke(dev);
+        default:
+            break;
+    }
+    return 0;
+}
+
 static long syscall_handler_storage(const struct syscall_args *args)
 {
     struct device *dev = find_device(args->d[1] & 0xFF);
@@ -126,7 +146,7 @@ long syscall_handler(struct syscall_args args) {
         case 2:
             return syscall_handler_video(&args);
         case 3:
-            break;
+            return syscall_handler_inputdev(&args);
         case 4:
             return syscall_handler_storage(&args);
         case 5:

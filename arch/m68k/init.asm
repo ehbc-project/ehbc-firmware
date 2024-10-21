@@ -25,7 +25,7 @@ __init_arch::
     BRA         .loop_data
 .end_data:
 
-    ANDI.W      #$F1FF,SR               ; enable interrupt
+    ANDI.W      #$F0FF,SR               ; enable interrupt
 
     ; run ctors
     LEA         __init_array_start,A2

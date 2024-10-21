@@ -6,7 +6,7 @@ setjmp::
     MOVE.L      #.return,(28,A0)        ; save return address to A0 of jmp_buf
 
     IF  (__VASM&$40)==$40               ; if fpu exists
-    FMOVEM.X    FP0-FP7,(60,SP)         ; save registers FP0-FP7
+    FMOVEM.X    FP0-FP7,(60,A0)         ; save registers FP0-FP7
     ENDIF
 
     MOVE.L      #0,D0                   ; returns 0 when not jumped

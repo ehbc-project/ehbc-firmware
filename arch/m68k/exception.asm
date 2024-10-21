@@ -5,33 +5,31 @@
 
     SECTION     .text
 error_handler::
-    LINK.W      A6,#0
-
     ; dump registers
-    MOVEM.L     D0-D7/A0-A5,-(SP)
+    MOVEM.L     D0-D7/A0-A7,-(SP)
 
     ; get stack pointer
-    MOVE.W      (56,SP),D0
-    BTST        #13,D0
+    MOVE.W      (64,SP),D0
+    BTST        #13,D0                  ; test user / supervisor
     BEQ         .sp_usp
-    BTST        #12,D0
-    BEQ         .sp_isp
-    DC.W        $4E7A, $8803            ; MOVEC MSP, A0
-    BRA         .sp_end
-.sp_isp:
-    MOVEA.L     A6,A0
-    BRA         .sp_end
+    BTST        #12,D0                  ; test master / interrupt
+    BEQ         .sp_skip
+    BRA         .sp_msp
 .sp_usp:
     MOVE.L      USP,A0
+    BRA         .sp_end
+.sp_msp:
+    DC.W        $4E7A, $8803            ; MOVEC MSP, A0
+    BRA         .sp_end
 .sp_end:
-    MOVE.L      A0,-(SP)
+    MOVE.L      A0,(60,SP)              ; store to A7
+.sp_skip:
+
+    SUBQ.L      #4,SP
 
     ; dump system status
-    JSR         system_dump
+    BRA         system_dump
 
-    ; should not reach here
-    UNLK        A6
-    RTE
 
 trap0_handler::
     LINK.W      A6,#0

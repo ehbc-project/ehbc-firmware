@@ -86,6 +86,10 @@ void ehbcfw_video_write_ansi_tty(int id, const char *str, unsigned int len);
 void ehbcfw_video_load_text_font(int id, void *data);
 void ehbcfw_video_load_palette(int id, void *data, unsigned int size);
 
+int ehbcfw_kbd_get_char(int id);
+int ehbcfw_kbd_wait_get_keystroke(int id);
+int ehbcfw_kbd_get_keystroke(int id);
+
 struct ehbcfw_drive_param_table {
     int id;
 };

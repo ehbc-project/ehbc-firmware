@@ -4,14 +4,29 @@ void ringbuf8_init(struct ringbuf8 *rb, unsigned long size, uint8_t *buf)
 {
     rb->size = size;
     rb->buf = buf;
+    rb->external_lock = 0;
     spinlock_irq_init(&rb->lock);
 }
 
-int ringbuf8_read(struct ringbuf8 *rb, uint8_t *data)
+void ringbuf8_lock(struct ringbuf8 *rb)
 {
     spinlock_irq_lock(&rb->lock);
+    rb->external_lock = 1;
+}
+
+void ringbuf8_unlock(struct ringbuf8 *rb)
+{
+    rb->external_lock = 0;
+    spinlock_irq_lock(&rb->lock);
+}
+
+int ringbuf8_pop(struct ringbuf8 *rb, uint8_t *data)
+{
+    if (!rb->external_lock)
+        spinlock_irq_lock(&rb->lock);
     if (rb->rptr == rb->wptr) {
-        spinlock_irq_unlock(&rb->lock);
+        if (!rb->external_lock)
+            spinlock_irq_unlock(&rb->lock);
         return 1;
     }
 
@@ -23,15 +38,18 @@ int ringbuf8_read(struct ringbuf8 *rb, uint8_t *data)
         rb->rptr = 0;
     }
 
-    spinlock_irq_unlock(&rb->lock);
+    if (!rb->external_lock)
+        spinlock_irq_unlock(&rb->lock);
     return 0;
 }
 
-int ringbuf8_write(struct ringbuf8 *rb, uint8_t data)
+int ringbuf8_push(struct ringbuf8 *rb, uint8_t data)
 {
-    spinlock_irq_lock(&rb->lock);
+    if (!rb->external_lock)
+        spinlock_irq_lock(&rb->lock);
     if (rb->wptr == rb->rptr - 1 || (rb->wptr == rb->size - 1 && rb->rptr == 0)) {
-        spinlock_irq_unlock(&rb->lock);
+        if (!rb->external_lock)
+            spinlock_irq_unlock(&rb->lock);
         return 1;
     }
 
@@ -43,23 +61,50 @@ int ringbuf8_write(struct ringbuf8 *rb, uint8_t data)
         rb->wptr = 0;
     }
 
-    spinlock_irq_unlock(&rb->lock);
+    if (!rb->external_lock)
+        spinlock_irq_unlock(&rb->lock);
     return 0;
 }
 
 void ringbuf8_flush(struct ringbuf8 *rb)
 {
-    spinlock_irq_lock(&rb->lock);
+    if (!rb->external_lock)
+        spinlock_irq_lock(&rb->lock);
 
     rb->rptr = rb->wptr;
 
-    spinlock_irq_unlock(&rb->lock);
+    if (!rb->external_lock)
+        spinlock_irq_unlock(&rb->lock);
+}
+
+int ringbuf8_unpop(struct ringbuf8 *rb, uint8_t data)
+{
+    if (!rb->external_lock)
+        spinlock_irq_lock(&rb->lock);
+    if (rb->rptr == rb->wptr) {
+        if (!rb->external_lock)
+            spinlock_irq_unlock(&rb->lock);
+        return 1;
+    }
+
+    if (rb->rptr > 0) {
+        rb->rptr--;
+    } else {
+        rb->rptr = rb->size - 1;
+    }
+
+    rb->buf[rb->rptr] = data;
+
+    if (!rb->external_lock)
+        spinlock_irq_unlock(&rb->lock);
+    return 0;
 }
 
 unsigned int ringbuf8_getfree(struct ringbuf8 *rb)
 {
     unsigned int size;
-    spinlock_irq_lock(&rb->lock);
+    if (!rb->external_lock)
+        spinlock_irq_lock(&rb->lock);
 
     if (rb->rptr <= rb->wptr) {
         size = rb->wptr - rb->rptr;
@@ -67,6 +112,7 @@ unsigned int ringbuf8_getfree(struct ringbuf8 *rb)
         size = rb->size - rb->rptr + rb->wptr;
     }
 
-    spinlock_irq_unlock(&rb->lock);
+    if (!rb->external_lock)
+        spinlock_irq_unlock(&rb->lock);
     return size;
 }

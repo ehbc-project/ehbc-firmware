@@ -15,6 +15,7 @@
 #include "hw/rtc.h"
 #include "fs/fat.h"
 #include "cfgutil.h"
+#include "crypto/crc32.h"
 
 extern struct device *const mc68681_device;
 extern struct device *const floppy_device;
@@ -143,6 +144,9 @@ void main(void)
         printf("\n");
 
         printf("Loaded to address 0x10000.\r\n");
+
+        // verify checksum
+        printf("crc32: %08lX\n", crc32((void*)0x10000, file_size, 0));
     }
 
     ehbcfw_aio_flush_rx(0);

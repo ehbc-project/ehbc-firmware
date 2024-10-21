@@ -6,6 +6,7 @@
 #include "debug.h"
 #include "proto1/scu.h"
 #include "hw/floppy.h"
+#include "hw/ps2kbms.h"
 #include "hw/mc68681.h"
 
 #define VOIDPTR(f) ((void*)(long)(f))
@@ -34,6 +35,7 @@ static void trace()
 
 extern struct device *const mc68681_device;
 extern struct device *const floppy_device;
+extern struct device *const ps2kbms_device;
 
 struct exception_vector exception_vector;
 
@@ -58,6 +60,26 @@ static void avec2_handler(void)
 }
 
 __attribute__((interrupt_handler))
+static void avec3_handler(void)
+{
+    struct scu_regs *scu = (void*)0xFF000000;
+    uint32_t irq_status =
+        (scu->isr_iar.isr[0] << 16) |
+        (scu->isr_iar.isr[1] << 8) |
+        scu->isr_iar.isr[2];
+
+    if (irq_status & (1 << 1)) {
+        FUNC(exception_vector.userdef[1])();
+    }
+
+    if (irq_status & (1 << 12)) {
+        FUNC(exception_vector.userdef[12])();
+    }
+
+    scu->isr_iar.iar[2];  // ack level 3
+}
+
+__attribute__((interrupt_handler))
 static void avec5_handler(void)
 {
     struct scu_regs *scu = (void*)0xFF000000;
@@ -73,6 +95,11 @@ static void avec5_handler(void)
     scu->isr_iar.iar[4];  // ack level 5
 }
 
+static void irq1_handler(void)
+{
+    ps2kbms_irq_handler(ps2kbms_device);
+}
+
 static void irq6_handler(void)
 {
     floppy_irq_handler(floppy_device);
@@ -82,6 +109,11 @@ static void irq8_handler(void)
 {
     static int int_count = 0;
     debug_printf("%d\n", int_count++);
+}
+
+static void irq12_handler(void)
+{
+    debug_printf("irq12\n");
 }
 
 static void irq16_handler(void)
@@ -110,7 +142,7 @@ struct exception_vector exception_vector = {
     .spurious_interrupt =           NULL,
     .autovector1 =                  NULL,
     .autovector2 =                  VOIDPTR(avec2_handler),
-    .autovector3 =                  NULL,
+    .autovector3 =                  VOIDPTR(avec3_handler),
     .autovector4 =                  NULL,
     .autovector5 =                  VOIDPTR(avec5_handler),
     .autovector6 =                  NULL,
@@ -133,7 +165,7 @@ struct exception_vector exception_vector = {
 
     .userdef = {
         NULL,  // irq0
-        NULL,  // irq1
+        VOIDPTR(irq1_handler),  // irq1
         NULL,  // irq2
         NULL,  // irq3
         NULL,  // irq4
@@ -144,7 +176,7 @@ struct exception_vector exception_vector = {
         NULL,  // irq9
         NULL,  // irq10
         NULL,  // irq11
-        NULL,  // irq12
+        VOIDPTR(irq12_handler),  // irq12
         NULL,  // irq13
         NULL,  // irq14
         NULL,  // irq15

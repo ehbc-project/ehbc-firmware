@@ -5,18 +5,14 @@
 char *fgets(char *str, int num, FILE *stream)
 {
     int len = 0;
-    char rxbyte;
+    int rxdata;
     char *buf = str;
 
-    do {
-        if (ehbcfw_aio_rx(0, &rxbyte)) break;
-
-        switch (rxbyte) {
+    while ((rxdata = ehbcfw_kbd_get_char(3)) > 0 && len < num) {
+        switch (rxdata) {
+            case '\r':  // ignore carriage return
+                break;
             case '\n':
-                if (len > 0 && buf[-1] == '\r') {
-                    break;
-                }
-            case '\r':
                 printf("\r\n");
                 *buf++ = '\n';
                 len++;
@@ -29,11 +25,11 @@ char *fgets(char *str, int num, FILE *stream)
                 }
                 break;
             default:
-                printf("%c", rxbyte);
-                *buf++ = rxbyte;
+                printf("%c", rxdata);  // echo input
+                *buf++ = rxdata;
                 len++;
         }
-    } while (rxbyte && len < num - 1);
+    };
 
 finish:
     *buf = 0;

@@ -1,157 +1,96 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <libehbcfw/syscall.h>
 
 #include "types.h"
 #include "exec.h"
 
-static int read_line(char *buf, int buflen)
+void hexdump(const void *ptr, int count)
 {
-    int len = 0;
-    char rxbyte;
+    const uint8_t *bp = ptr;
 
-    do {
-        if (ehbcfw_aio_rx(0, &rxbyte)) break;
-
-        switch (rxbyte) {
-            case '\r':
-                printf("\r\n");
-                goto finish;
-            case '\b':
-                if (len > 0) {
-                    printf("\b \b");
-                    *--buf = 0;
-                    len--;
-                }
-                break;
-            default:
-                printf("%c", rxbyte);
-                *buf++ = rxbyte;
-                len++;
+    while (count > 0) {
+        printf("%p", bp);
+        for (int i = 0; i < 16 && count > 0; i++) {
+            printf(" %02X", *bp++);
+            count--;
         }
-    } while (rxbyte && len < buflen);
-
-finish:
-    *buf = 0;
-    return len;
-}
-
-static void hexdump(const void* p, size_t len) {
-    const uint8_t* bp = p;
-
-    for (int i = 0; i < len; i++) {
-        if (!(i & 0xF)) {
-            uint32_t addr = (uint32_t)p;
-            addr += i;
-            printf("\r\n%08lX ", addr);
-        }
-
-        printf("%02X ", *bp++);
+        printf("\n");
     }
-    printf("\r\n");
 }
 
 static int parse_line(char *buf, int buflen)
 {
-    // state 0: get start address
-    // state 1: get address
-    // state 2: get bytes
-    // state 3: jump to address
-    int state = 0;
-    uint32_t start_addr = 0, addr = 0;
-    for (int i = 0; i < buflen && buf[i]; i++) {
-        // hexadecimal
-        if (isdigit(buf[i])) {
-            addr <<= 4;
-            addr |= buf[i] - '0';
-        } else if (isxdigit(buf[i])) {
-            addr <<= 4;
-            if (isupper(buf[i])) {
-                addr |= buf[i] - 'A' + 10;
-            } else {
-                addr |= buf[i] - 'a' + 10;
+    long addr, end_addr, lba, count, devid;
+    uint8_t *diskbuf;
+
+    // trim leading whitespaces
+    while (*buf == ' ') { buf++; }
+
+    switch (*buf) {
+        case 'R':  // run code at address
+        case 'r':
+            buf++;
+            addr = strtol(buf, &buf, 16);
+            printf("Program terminated with code %d\n", exec((void*)addr));
+            return 0;
+        case 'L':  // load from disk to memory
+        case 'l':
+            buf++;
+            devid = strtol(buf, &buf, 10);
+            while (*buf == ' ') { buf++; }
+            if (!isdigit(*buf)) break;
+            lba = strtol(buf, &buf, 10);
+            while (*buf == ' ') { buf++; }
+            if (!isdigit(*buf)) break;
+            count = strtol(buf, &buf, 10);
+            while (*buf == ' ') { buf++; }
+            if (!isxdigit(*buf)) break;
+            addr = strtol(buf, &buf, 16);
+
+            diskbuf = (void*)addr;
+
+            for (int i = 0; i < count; i++) {
+                ehbcfw_storage_read_sectors_lba(devid, lba + i, 1, diskbuf);
+                diskbuf += 512;
             }
-        } else {
-            switch (buf[i]) {
-                case '.':  // dump multiple
-                    start_addr = addr;
-                    state = 1;
-                    break;
-                case ':':  // write to memory
-                    start_addr = addr;
-                    state = 2;
-                    break;
-                case ' ':  // write to next memory
-                    switch (state) {
-                        case 0:
-                            hexdump((void*)addr, 1);
-                            break;
-                        case 1:
-                            if (addr < start_addr) {
-                                printf("?ERROR\r\n");
-                                break;
-                            }
-                            hexdump((void*)start_addr, addr - start_addr + 1);
-                            state = 0;
-                            break;
-                        case 2:
-                            *(uint8_t*)start_addr++ = addr;
-                            break;
-                        default:
-                            break;
+
+            printf("Loaded LBA #%lu-#%lu of device #%lu to %08lX\n", lba, lba + count - 1, devid, addr);
+            return 0;
+        case '?':  // help
+            printf("<addr>                      Dump a byte from given address\n");
+            printf("<addr>.<addr>               Dump multiple bytes from given address range\n");
+            printf("<addr>:<byte> ...           Write one or more byte to given address\n");
+            printf("R<addr>                     Jump and run code from given address\n");
+            printf("L<dev> <lba> <count> <addr> Load sectors from disk\n");
+            return 0;
+            break;
+        default:
+            if (isxdigit(*buf)) {
+                addr = strtol(buf, &buf, 16);
+                if (*buf == '.') {  // dump multiple bytes
+                    buf++;
+                    end_addr = strtol(buf, &buf, 16);
+
+                    hexdump((void*)addr, end_addr - addr + 1);
+                } else if (*buf == ':') {  // set bytes
+                    buf++;
+
+                    while (isxdigit(*buf)) {
+                        *(uint8_t*)addr++ = strtol(buf, &buf, 16);
+                        while (*buf == ' ') { buf++; }
                     }
-                    break;
-                case 'R':  // run address
-                    state = 3;
-                    break;
-                case 'L':  // load from disk
-                    state = 4;
-                    break;
-                case '?':  // help
-                    printf("<addr>               Dump a byte from given address\r\n");
-                    printf("<addr>.<addr>        Dump multiple bytes from given address range\r\n");
-                    printf("<addr>:<byte> ...    Write one or more byte to given address\r\n");
-                    printf("R<addr>              Jump and run code from given address\r\n");
-                    goto finish;
-                default:
-                    printf("?UNKNOWN CHAR\r\n");
-                    goto finish;
-            }
-            addr = 0;
-        }
-    }
-
-    if (buf[buflen - 1] != ' ') {
-        switch (state) {
-            case 0:
-                hexdump((void*)addr, 1);
-                break;
-            case 1:
-                if (addr < start_addr) {
-                    printf("?ERROR\r\n");
-                    break;
+                } else {  // dump single byte
+                    hexdump((void*)addr, 1);
                 }
-                hexdump((void*)start_addr, addr - start_addr + 1);
-                state = 0;
-                break;
-            case 2:
-                *(uint8_t*)start_addr++ = addr;
-                break;
-            case 3:
-                printf("Program terminated with code %d\r\n", exec((void*)addr));
-                break;
-            case 4:
-                ehbcfw_storage_read_sectors_lba(7, addr, 1, (void*)0x10000);
-                break;
-            default:
-                printf("?UNKNOWN CHAR\r\n");
-                break;
-        }
+                return 0;
+            }
     }
 
-finish:
-    return 0;
+    printf("UNEXPECTED CHAR '%c'\n", *buf);
+    return 1;
 }
 
 void run_monitor(void)
@@ -159,6 +98,7 @@ void run_monitor(void)
     for (;;) {
         char linebuf[128];
         printf("> ");
-        parse_line(linebuf, read_line(linebuf, sizeof(linebuf)));
+        fgets(linebuf, sizeof(linebuf), stdin);
+        parse_line(linebuf, strnlen(linebuf, sizeof(linebuf)) - 1);
     }
 }

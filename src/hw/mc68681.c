@@ -79,7 +79,7 @@ void mc68681_irq_handler(struct device *dev)
 
     if (regs->isr & 0x01) {  // txrdya
         uint8_t data;
-        if (ringbuf8_read(param->cha_txbuf, &data)) {
+        if (ringbuf8_pop(param->cha_txbuf, &data)) {
             // if there's no data in txbuf
             param->imr &= ~0x01;  // unmask txrdya
             regs->imr = param->imr;
@@ -90,12 +90,12 @@ void mc68681_irq_handler(struct device *dev)
 
     if (regs->isr & 0x02) {  // rxrdya
         // TODO: handle underflow
-        ringbuf8_write(param->cha_rxbuf, mc68681_rx_polled(regs, 0));
+        ringbuf8_push(param->cha_rxbuf, mc68681_rx_polled(regs, 0));
     }
 
     if (regs->isr & 0x10) {  // txrdyb
         uint8_t data;
-        if (ringbuf8_read(param->chb_txbuf, &data)) {
+        if (ringbuf8_pop(param->chb_txbuf, &data)) {
             // if there's no data in txbuf
             param->imr &= ~0x10;  // unmask txrdyb
             regs->imr = param->imr;
@@ -106,7 +106,7 @@ void mc68681_irq_handler(struct device *dev)
 
     if (regs->isr & 0x20) {  // rxrdyb
         // TODO: handle underflow
-        ringbuf8_write(param->chb_rxbuf, mc68681_rx_polled(regs, 1));
+        ringbuf8_push(param->chb_rxbuf, mc68681_rx_polled(regs, 1));
     }
 }
 
@@ -235,7 +235,7 @@ int mc68681_cha_read_byte(struct device *dev)
     struct device_mc68681 *param = dev->param;
 
     uint8_t data;
-    while (ringbuf8_read(param->cha_rxbuf, &data)) {}
+    while (ringbuf8_pop(param->cha_rxbuf, &data)) {}
     return data;
 }
 
@@ -244,7 +244,7 @@ int mc68681_chb_read_byte(struct device *dev)
     struct device_mc68681 *param = dev->param;
 
     uint8_t data;
-    while (ringbuf8_read(param->chb_rxbuf, &data)) {}
+    while (ringbuf8_pop(param->chb_rxbuf, &data)) {}
     return data;
 }
 
@@ -255,7 +255,7 @@ int mc68681_cha_write_byte(struct device *dev, uint8_t chr)
 
     param->imr |= 0x01;  // unmask txrdya
     regs->imr = param->imr;
-    while (ringbuf8_write(param->cha_txbuf, chr)) {}
+    while (ringbuf8_push(param->cha_txbuf, chr)) {}
     mc68681_irq_handler(dev);  // is it ok?
 
     return 0;
@@ -268,7 +268,7 @@ int mc68681_chb_write_byte(struct device *dev, uint8_t chr)
 
     param->imr |= 0x10;  // unmask txrdyb
     regs->imr = param->imr;
-    while (ringbuf8_write(param->chb_txbuf, chr)) {}
+    while (ringbuf8_push(param->chb_txbuf, chr)) {}
     mc68681_irq_handler(dev);  // is it ok?
 
     return 0;
