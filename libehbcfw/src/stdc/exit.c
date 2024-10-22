@@ -1,8 +1,10 @@
 #include <stdlib.h>
 
-extern void _exit(void);
+extern void _exit(int status);
 
 void exit(int status)
 {
-    _exit();
+    _exit(status);
+
+    for (;;) {}  // prevent compiler from complaining about noreturn
 }

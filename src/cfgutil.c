@@ -5,6 +5,8 @@
 
 #include <libehbcfw/syscall.h>
 
+#include "debug.h"
+
 #define CFGUTIL_TITLE "EHBC Firmware Configuration Utility"
 #define CFGUTIL_TITLE_LEN (sizeof(CFGUTIL_TITLE) - 1)
 
@@ -36,7 +38,10 @@
 #define BG_BROWN    0x60
 #define BG_WHITE    0x70
 
-static struct cfgutil_window *root_win_head = NULL, *current;
+static struct cfgutil_window *root_win_head = NULL;
+static struct cfgutil_window *head = NULL, *current;
+
+static int refresh;
 
 void cfgutil_add_root_window(struct cfgutil_window *win)
 {
@@ -70,32 +75,32 @@ void cfgutil_add_entry(struct cfgutil_window *win, struct cfgutil_entry *entry)
     entry->next = NULL;
 }
 
-static void cfgutil_draw_box(int top, int bottom, int left, int right)
+static void cfgutil_draw_box(int top, int bottom, int left, int right, int attr)
 {
     ehbcfw_video_set_cursor_pos(2, TERM_COL * top + left);
-    ehbcfw_video_write_char_attr(2, 0xDA, FG_WHITE | BG_BLUE);
+    ehbcfw_video_write_char_attr(2, 0xDA, attr);
     for (int i = left + 1; i < right; i++) {
         ehbcfw_video_set_cursor_pos(2, TERM_COL * top + i);
-        ehbcfw_video_write_char_attr(2, 0xC4, FG_WHITE | BG_BLUE);
+        ehbcfw_video_write_char_attr(2, 0xC4, attr);
     }
     ehbcfw_video_set_cursor_pos(2, TERM_COL * top + right);
-    ehbcfw_video_write_char_attr(2, 0xBF, FG_WHITE | BG_BLUE);
+    ehbcfw_video_write_char_attr(2, 0xBF, attr);
 
     for (int i = top + 1; i < bottom; i++) {
         ehbcfw_video_set_cursor_pos(2, TERM_COL * i + left);
-        ehbcfw_video_write_char_attr(2, 0xB3, FG_WHITE | BG_BLUE);
+        ehbcfw_video_write_char_attr(2, 0xB3, attr);
         ehbcfw_video_set_cursor_pos(2, TERM_COL * i + right);
-        ehbcfw_video_write_char_attr(2, 0xB3, FG_WHITE | BG_BLUE);
+        ehbcfw_video_write_char_attr(2, 0xB3, attr);
     }
 
     ehbcfw_video_set_cursor_pos(2, TERM_COL * bottom + left);
-    ehbcfw_video_write_char_attr(2, 0xC0, FG_WHITE | BG_BLUE);
+    ehbcfw_video_write_char_attr(2, 0xC0, attr);
     for (int i = left + 1; i < right; i++) {
         ehbcfw_video_set_cursor_pos(2, TERM_COL * bottom + i);
-        ehbcfw_video_write_char_attr(2, 0xC4, FG_WHITE | BG_BLUE);
+        ehbcfw_video_write_char_attr(2, 0xC4, attr);
     }
     ehbcfw_video_set_cursor_pos(2, TERM_COL * bottom + right);
-    ehbcfw_video_write_char_attr(2, 0xD9, FG_WHITE | BG_BLUE);
+    ehbcfw_video_write_char_attr(2, 0xD9, attr);
 }
 
 static void cfgutil_draw_separator_vertical(int col, int top, int bottom)
@@ -126,7 +131,7 @@ static void cfgutil_set_attr(int top, int bottom, int left, int right, int attr)
 
 static void cfgutil_erase(int top, int bottom, int left, int right, int attr)
 {
-    ehbcfw_video_scroll_area(2, 0, attr, 0, TERM_ROW - 1, 0, TERM_COL - 1);
+    ehbcfw_video_scroll_area(2, 0, attr, top, bottom, left, right);
 }
 
 static void cfgutil_scroll(int top, int bottom, int left, int right, int attr, int amount)
@@ -153,7 +158,7 @@ static void cfgutil_draw_base(void)
 
     // box & separator
     cfgutil_set_attr(2, TERM_ROW - 2, 0, TERM_COL - 1, FG_BLUE | BG_WHITE);
-    cfgutil_draw_box(2, TERM_ROW - 2, 0, TERM_COL - 1);
+    cfgutil_draw_box(2, TERM_ROW - 2, 0, TERM_COL - 1, FG_BLUE | BG_WHITE);
     cfgutil_draw_separator_horizontal(TERM_ROW - 5, 0, TERM_COL - 1);
     cfgutil_draw_separator_vertical(TERM_COL - 24, 2, TERM_ROW - 5);
 
@@ -173,10 +178,13 @@ static void cfgutil_draw_base(void)
 static void cfgutil_draw_menubar(struct cfgutil_window *head)
 {
     int col = 1;
+    cfgutil_erase(1, 1, 0, TERM_COL - 1, FG_WHITE | BG_BLUE);
     while (head) {
         int name_len = strlen(head->name);
         if (current == head) {  // highlight if it's selected window
-            cfgutil_set_attr(1, 1, col, col + name_len + 2, FG_BLUE | BG_WHITE);
+            cfgutil_erase(1, 1, col, col + name_len + 1, FG_BLUE | BG_WHITE);
+        } else {
+            cfgutil_erase(1, 1, col, col + name_len + 1, FG_WHITE | BG_BLUE);
         }
         cfgutil_print_string(1, col + 1, head->name, name_len);
         col += name_len + 2;
@@ -188,6 +196,8 @@ static void cfgutil_draw_window(struct cfgutil_window *win)
 {
     struct cfgutil_entry *entry = win->entries;
     int entry_index = 0;
+
+    cfgutil_erase(3, TERM_ROW - 6, 1, TERM_COL - 24, FG_BLUE | BG_WHITE);
 
     while (entry) {
         int entry_row = entry_index - win->scroll_pos + 3;
@@ -241,14 +251,158 @@ static void cfgutil_draw_window(struct cfgutil_window *win)
     }
 }
 
-void cfgutil_draw(void)
+static void cfgutil_prev_window(void)
 {
+    if (current == head) return;
+
+    struct cfgutil_window *prev = current;
+    current = head;
+    while (current->next != prev) {
+        current = current->next;
+    }
+    current->selected = current->entries;
+    if (current != prev) {
+        refresh = 1;
+    }
+}
+
+static void cfgutil_next_window(void)
+{
+    if (current->next) {
+        current = current->next;
+        current->selected = current->entries;
+        refresh = 1;
+    }
+}
+
+static void cfgutil_prev_entry(void)
+{
+    if (current->selected == current->entries) return;
+
+    struct cfgutil_entry *prev = current->selected, *entry = current->entries;
+    while (entry && entry != prev) {
+        if (entry->flags & CEF_SELECTABLE) {
+            current->selected = entry;
+        }
+        entry = entry->next;
+    }
+    if (current->selected != prev) {
+        refresh = 1;
+    }
+}
+
+static void cfgutil_next_entry(void)
+{
+    struct cfgutil_entry *entry = current->selected->next;
+    
+    while (entry) {
+        if (entry->flags & CEF_SELECTABLE) {
+            current->selected = entry;
+            refresh = 1;
+            break;
+        }
+        entry = entry->next;
+    }
+}
+
+static void cfgutil_esc(void)
+{
+    head = root_win_head;
+    current = head;
+    current->selected = current->entries;
+    refresh = 1;
+}
+
+static void cfgutil_enter(void)
+{
+    struct cfgutil_entry *entry = current->selected;
+
+    switch (entry->type) {
+        case CET_EXEC:
+            if (entry->cfg_exec.handler) {
+                entry->cfg_exec.handler(entry);
+                refresh = 1;
+            }
+            break;
+        case CET_ENABLE:
+            if (entry->cfg_enable.handler) {
+                entry->cfg_enable.handler(entry, !entry->cfg_enable.enable);
+                refresh = 1;
+            }
+            break;
+        case CET_SUBWIN:
+            if (entry->cfg_subwin.win) {
+                head = entry->cfg_subwin.win;
+                current = head;
+                current->selected = current->entries;
+                refresh = 1;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void cfgutil(void)
+{
+    int keystroke;
+
+    head = root_win_head;
+    current = head;
+    current->selected = current->entries;
+
+    refresh = 1;
+
     ehbcfw_video_set_cursor_shape(2, 0x2607);
     cfgutil_draw_base();
 
-    current = root_win_head;
-    current->selected = current->entries;
-    cfgutil_draw_menubar(root_win_head);
-    cfgutil_draw_window(root_win_head);
-    for (;;) {}
+    for (;;) {
+        if (refresh) {
+            cfgutil_draw_menubar(head);
+            cfgutil_draw_window(current);
+            refresh = 0;
+        }
+
+        while (!(keystroke = ehbcfw_kbd_get_keystroke(3))) {}
+
+        switch (keystroke) {
+            case 0x01:
+                cfgutil_esc();
+                break;
+            case 0x1C:
+                cfgutil_enter();
+                break;
+            case 0xE0:
+                while (!(keystroke = ehbcfw_kbd_get_keystroke(3))) {}
+                switch (keystroke) {
+                    case 0x4B:  // left
+                        cfgutil_prev_window();
+                        break;
+                    case 0x4D:  // right
+                        cfgutil_next_window();
+                        break;
+                    case 0x48:  // up
+                        cfgutil_prev_entry();
+                        break;
+                    case 0x50:  // down
+                        cfgutil_next_entry();
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case 0x44:
+                goto end;
+            default:
+                break;
+        }
+    }
+
+end:
+    cfgutil_erase(0, TERM_ROW - 1, 0, TERM_COL -1, FG_WHITE | BG_BLACK);
+
+    ehbcfw_video_set_cursor_pos(2, 0);
+    ehbcfw_video_set_cursor_shape(2, 0x0C0F);
+
+    return;
 }

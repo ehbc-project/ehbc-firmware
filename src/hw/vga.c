@@ -39,7 +39,6 @@ struct video_mode {
 static const struct video_mode *current_vmode;
 
 extern const void _binary_VGA8_F16_start;
-extern const void _binary_VGA8_F16_end;
 extern const unsigned long _binary_VGA8_F16_size;
 
 const char *vga_get_name(struct device *dev)

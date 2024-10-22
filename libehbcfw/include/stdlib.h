@@ -8,8 +8,13 @@
 
 #define RAND_MAX        0x7FFF
 
+__attribute__((noreturn))
 void exit(int status);
+
+__attribute__((noreturn))
 void _Exit(int status);
+
+__attribute__((noreturn))
 void quick_exit(int status);
 
 int atexit(void (*func)(void));

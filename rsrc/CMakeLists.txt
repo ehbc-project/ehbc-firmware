@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-add_library(resources STATIC VGA8.F16.obj)
+add_library(resources STATIC VGA8.F16.obj splash.bin.obj)
 set_target_properties(resources PROPERTIES LINKER_LANGUAGE C)
 
 add_custom_command(
@@ -10,6 +10,16 @@ add_custom_command(
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Converting resource object VGA8.F16.obj")
 set_source_files_properties(VGA8.F16.obj PROPERTIES
+    EXTERNAL_OBJECT true
+    GENERATED true)
+
+add_custom_command(
+    OUTPUT splash.bin.obj
+    COMMAND cd "${CMAKE_CURRENT_SOURCE_DIR}" && ${CMAKE_OBJCOPY} -I binary -O elf32-m68k --rename-section .data=.rodata,alloc,load,readonly,data,contents splash.bin "${CMAKE_CURRENT_BINARY_DIR}/splash.bin.obj"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/splash.bin"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Converting resource object splash.bin.obj")
+set_source_files_properties(splash.bin.obj PROPERTIES
     EXTERNAL_OBJECT true
     GENERATED true)
 

@@ -15,7 +15,7 @@ set(TARGET "m68k-proto1" CACHE STRING "Target name to build")
 string(REPLACE "-" ";" TARGET ${TARGET})
 list(GET TARGET 0 TARGET_ARCH)
 list(GET TARGET 1 TARGET_BOARD)
-enable_language(C ASM_VASM)
+enable_language(C ASM)
 
 # Target Configurations
 add_executable(firmware)

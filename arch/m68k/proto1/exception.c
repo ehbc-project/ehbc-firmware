@@ -40,6 +40,22 @@ extern struct device *const ps2kbms_device;
 struct exception_vector exception_vector;
 
 __attribute__((interrupt_handler))
+static void avec1_handler(void)
+{
+    struct scu_regs *scu = (void*)0xFF000000;
+    uint32_t irq_status =
+        (scu->isr_iar.isr[0] << 16) |
+        (scu->isr_iar.isr[1] << 8) |
+        scu->isr_iar.isr[2];
+
+    if (irq_status & (1 << 14)) {
+        FUNC(exception_vector.userdef[14])();
+    }
+
+    scu->isr_iar.iar[0];  // ack level 1
+}
+
+__attribute__((interrupt_handler))
 static void avec2_handler(void)
 {
     struct scu_regs *scu = (void*)0xFF000000;
@@ -116,6 +132,11 @@ static void irq12_handler(void)
     debug_printf("irq12\n");
 }
 
+static void irq14_handler(void)
+{
+    debug_printf("irq14\n");
+}
+
 static void irq16_handler(void)
 {
     mc68681_irq_handler(mc68681_device);
@@ -140,7 +161,7 @@ struct exception_vector exception_vector = {
     .uninitialized_interrupt =      VOIDPTR(error_handler),
 
     .spurious_interrupt =           NULL,
-    .autovector1 =                  NULL,
+    .autovector1 =                  VOIDPTR(avec1_handler),
     .autovector2 =                  VOIDPTR(avec2_handler),
     .autovector3 =                  VOIDPTR(avec3_handler),
     .autovector4 =                  NULL,
@@ -178,7 +199,7 @@ struct exception_vector exception_vector = {
         NULL,  // irq11
         VOIDPTR(irq12_handler),  // irq12
         NULL,  // irq13
-        NULL,  // irq14
+        VOIDPTR(irq14_handler),  // irq14
         NULL,  // irq15
         VOIDPTR(irq16_handler),  // irq16
         NULL,  // irq17

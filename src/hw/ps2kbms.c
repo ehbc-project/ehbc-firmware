@@ -577,7 +577,7 @@ int ps2kb_get_keystroke(struct device *dev)
     uint8_t data;
 
     if(ringbuf8_pop(param->kbbuf, &data)) {
-        return -1;
+        return 0;
     }
 
     return data;

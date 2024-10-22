@@ -15,6 +15,7 @@
 #include "hw/rtc.h"
 #include "fs/fat.h"
 #include "cfgutil.h"
+#include "splash.h"
 #include "crypto/crc32.h"
 
 extern struct device *const mc68681_device;
@@ -36,8 +37,14 @@ void main(void)
         printf("Video mode not found\r\n");
         return;
     }
+
+    show_splash();
+
+    for (int i = 0; i < 1048576 * 5; i++) {}
+
+    cfgutil();
     
-    ehbcfw_video_set_cursor_shape(2, 0x0A0F);
+    ehbcfw_video_set_cursor_shape(2, 0x0C0F);
     volatile uint8_t* fbuf_base = (uint8_t*)mode->buf_base;
     for (int i = 0; i < mode->width * mode->height; i++) {
         fbuf_base[(i << 1) + 1] = 0x07;
@@ -90,8 +97,6 @@ void main(void)
         map = map->next;
     }
     printf("+----------+----------+------------+-------+\r\n");
-
-    //cfgutil_draw();
     
     // mount floppy
     struct fat_filesystem fs;

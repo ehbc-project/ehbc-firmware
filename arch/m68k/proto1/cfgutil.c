@@ -10,7 +10,7 @@ static struct cfgutil_entry cpuinfo_window_entries[] = {
         .flags = 0,
         .type = CET_STRING,
         .cfg_string = {
-            .str = NULL,
+            .str = "MC68030",
         },
     },
     {
@@ -18,7 +18,7 @@ static struct cfgutil_entry cpuinfo_window_entries[] = {
         .flags = 0,
         .type = CET_STRING,
         .cfg_string = {
-            .str = NULL,
+            .str = "Motorola",
         },
     },
     {
@@ -26,7 +26,7 @@ static struct cfgutil_entry cpuinfo_window_entries[] = {
         .flags = 0,
         .type = CET_STRING,
         .cfg_string = {
-            .str = NULL,
+            .str = "33 MHz",
         },
     },
     {
@@ -34,7 +34,7 @@ static struct cfgutil_entry cpuinfo_window_entries[] = {
         .flags = 0,
         .type = CET_STRING,
         .cfg_string = {
-            .str = NULL,
+            .str = "M68k",
         },
     },
 };

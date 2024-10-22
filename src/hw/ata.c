@@ -9,6 +9,8 @@
 
 #include <asm/io.h>
 
+#include "debug.h"
+
 // Global defines -- ATA register and register bits.
 // command block & control block regs
 #define ATA_CB_DATA  0   // data reg         in/out pio_base_addr1+0
@@ -138,17 +140,19 @@
 
 #define IDE_TIMEOUT 1048576
 
-#define ATA_IO_READ(dev, reg) io_read_8(((struct device_ata*)(dev)->param)->port_io + (reg))
-#define ATA_IO_WRITE(dev, reg, data) io_write_8(((struct device_ata*)(dev)->param)->port_io + (reg), data)
+#define ATA_IO_READ(dev, reg) io_read_8(((struct device_ata*)((dev)->param))->port_io + (reg))
+#define ATA_IO_WRITE(dev, reg, data) io_write_8(((struct device_ata*)((dev)->param))->port_io + (reg), data)
 
-#define ATA_CTRL_READ(dev, reg) io_read_8(((struct device_ata*)(dev)->param)->port_ctrl + (reg))
-#define ATA_CTRL_WRITE(dev, reg, data) io_write_8(((struct device_ata*)(dev)->param)->port_ctrl + (reg), data)
+#define ATA_CTRL_READ(dev, reg) io_read_8(((struct device_ata*)((dev)->param))->port_ctrl + (reg))
+#define ATA_CTRL_WRITE(dev, reg, data) io_write_8(((struct device_ata*)((dev)->param))->port_ctrl + (reg), data)
 
 static int powerup_await_non_bsy(struct device *dev)
 {
+    struct device_ata *param = dev->param;
+
     uint8_t orstatus = 0, status;
     for (int i = 0; i < 4096; i++) {
-        status = ATA_IO_READ(dev, ATA_CB_STAT);
+        status = io_read_8(param->port_io + ATA_CB_STAT);
         if (!(status & ATA_CB_STAT_BSY)) break;
         orstatus |= status;
         if (orstatus == 0xFF) {
@@ -160,8 +164,10 @@ static int powerup_await_non_bsy(struct device *dev)
 
 static int await_ide(struct device *dev, uint8_t mask, uint8_t flags, int timeout)
 {
+    struct device_ata *param = dev->param;
+
     for (int i = 0; i < timeout; i++) {
-        uint8_t status = ATA_IO_READ(dev, ATA_CB_STAT);
+        uint8_t status = io_read_8(param->port_io + ATA_CB_STAT);
         if ((status & mask) == flags) return status;
     }
     return -1;
@@ -179,7 +185,9 @@ static int await_rdy(struct device *dev)
 
 static inline int pause_await_not_bsy(struct device *dev)
 {
-    ATA_IO_READ(dev, ATA_CB_STAT);
+    struct device_ata *param = dev->param;
+
+    io_read_8(param->port_io + ATA_CB_STAT);
     return await_not_bsy(dev);
 }
 
@@ -205,22 +213,23 @@ const char *ata_get_vendor(struct device *dev)
 
 int ata_probe_common(struct device *dev, int slave)
 {
+    struct device_ata *param = dev->param;
     // wait for bsy reset
     int status = powerup_await_non_bsy(dev);
     if (status < 0) return 1;
     uint8_t newdh = slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0;
-    ATA_IO_WRITE(dev, ATA_CB_DH, newdh);
+    io_write_8(param->port_io + ATA_CB_DH, newdh);
     for (volatile int i = 0; i < 512; i++) {}
     status = powerup_await_non_bsy(dev);
     if (status < 0) return 1;
 
     // check if ioport registers look valid
-    ATA_IO_WRITE(dev, ATA_CB_DH, newdh);
-    if (ATA_IO_READ(dev, ATA_CB_DH) != newdh) return 1;
-    ATA_IO_WRITE(dev, ATA_CB_SC, 0x55);
-    if (ATA_IO_READ(dev, ATA_CB_SC) != 0x55) return 1;
-    ATA_IO_WRITE(dev, ATA_CB_SN, 0xAA);
-    if (ATA_IO_READ(dev, ATA_CB_SN) != 0xAA) return 1;
+    io_write_8(param->port_io + ATA_CB_DH, newdh);
+    if (io_read_8(param->port_io + ATA_CB_DH) != newdh) return 1;
+    io_write_8(param->port_io + ATA_CB_SC, 0x55);
+    if (io_read_8(param->port_io + ATA_CB_SC) != 0x55) return 1;
+    io_write_8(param->port_io + ATA_CB_SN, 0xAA);
+    if (io_read_8(param->port_io + ATA_CB_SN) != 0xAA) return 1;
 
     return 0;
 }
@@ -237,11 +246,12 @@ int ata_slave_probe(struct device *dev)
 
 static int ata_reset_common(struct device *dev, int slave)
 {
+    struct device_ata *param = dev->param;
     int ret = 0;
 
-    ATA_CTRL_WRITE(dev, ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN | ATA_CB_DC_SRST);
+    io_write_8(param->port_ctrl + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN | ATA_CB_DC_SRST);
     for (volatile int i = 0; i < 1024; i++) {}
-    ATA_CTRL_WRITE(dev, ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
+    io_write_8(param->port_ctrl + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
     for (volatile int i = 0; i < 65536; i++) {}
 
     int status = await_not_bsy(dev);
@@ -249,26 +259,26 @@ static int ata_reset_common(struct device *dev, int slave)
 
     if (slave) {
         for (int i = 0; i < 8192; i++) {
-            ATA_IO_WRITE(dev, ATA_CB_DH, ATA_CB_DH_DEV1);
+            io_write_8(param->port_io + ATA_CB_DH, ATA_CB_DH_DEV1);
             status = delay_await_not_bsy(dev);
             if (status < 0) {
                 ret = 1;
                 goto finish;  // error
             }
-            if (ATA_IO_READ(dev, ATA_CB_DH) == ATA_CB_DH_DEV1) break;
+            if (io_read_8(param->port_io + ATA_CB_DH) == ATA_CB_DH_DEV1) break;
             if (i == 8191) {
                 ret = 1;
                 goto finish;  // timeout
             }
         }
     } else {
-        ATA_IO_WRITE(dev, ATA_CB_DH, ATA_CB_DH_DEV0);
+        io_write_8(param->port_io + ATA_CB_DH, ATA_CB_DH_DEV0);
     }
 
-    status = await_rdy(dev);
+    // status = await_rdy(dev);
 
 finish:
-    ATA_CTRL_WRITE(dev, ATA_CB_DC, ATA_CB_DC_HD15);
+    io_write_8(param->port_ctrl + ATA_CB_DC, ATA_CB_DC_HD15);
 
     return ret;
 }

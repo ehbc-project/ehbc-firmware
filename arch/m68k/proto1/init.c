@@ -292,12 +292,12 @@ static void init_scu(void)
     scu->icr[3] = 0xA0;  // irq6= level2      irq7= disabled
     scu->icr[4] = 0xD0;  // irq8= level5      irq9= disabled
     scu->icr[5] = 0x00;  // irq10=disabled    irq11=disabled
-    scu->icr[6] = 0xB0;  // irq12=level3    irq13=disabled
-    scu->icr[7] = 0x00;  // irq14=disabled    irq15=disabled
+    scu->icr[6] = 0xB0;  // irq12=level3      irq13=disabled
+    scu->icr[7] = 0x90;  // irq14=level1      irq15=disabled
     scu->icr[8] = 0xA0;  // irq16=level2      irq17=disabled
     scu->icr[9] = 0x00;  // irq18=disabled    irq19=disabled
-    scu->icr[10] = 0x00;  // irq20=disabled    irq21=disabled
-    scu->icr[11] = 0x00;  // irq22=disabled    irq23=disabled
+    scu->icr[10] = 0x00;  // irq20=disabled   irq21=disabled
+    scu->icr[11] = 0x00;  // irq22=disabled   irq23=disabled
 }
 
 static void init_dmac(void)
