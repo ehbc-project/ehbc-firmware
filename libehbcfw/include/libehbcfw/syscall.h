@@ -90,6 +90,8 @@ int ehbcfw_kbd_get_char(int id);
 int ehbcfw_kbd_wait_get_keystroke(int id);
 int ehbcfw_kbd_get_keystroke(int id);
 
+int ehbcfw_mouse_get_status(int id, uint8_t *button, int *dx, int *dy);
+
 struct ehbcfw_drive_param_table {
     int id;
 };

@@ -25,6 +25,7 @@
 
 #define I8042_CMD_AUX_DISABLE   ((0 << 12) | (0 << 8) | 0xA7)
 #define I8042_CMD_AUX_ENABLE    ((0 << 12) | (0 << 8) | 0xA8)
+#define I8042_CMD_AUX_TEST      ((0 << 12) | (0 << 8) | 0xA9)
 #define I8042_CMD_AUX_SEND      ((1 << 12) | (0 << 8) | 0xD4)
 
 // Keyboard commands
@@ -36,15 +37,15 @@
 #define ATKBD_CMD_RESET_BAT     ((0 << 12) | (1 << 8) | 0xFF)
 
 // Mouse commands
-#define PSMOUSE_CMD_SETSCALE11  0x00E6
-#define PSMOUSE_CMD_SETSCALE21  0x00E7
-#define PSMOUSE_CMD_SETRES      0x10E8
-#define PSMOUSE_CMD_GETINFO     0x03E9
-#define PSMOUSE_CMD_GETID       0x02F2
-#define PSMOUSE_CMD_SETRATE     0x10F3
-#define PSMOUSE_CMD_ENABLE      0x00F4
-#define PSMOUSE_CMD_DISABLE     0x00F5
-#define PSMOUSE_CMD_RESET_BAT   0x02FF
+#define PSMOUSE_CMD_SETSCALE11  ((0 << 12) | (0 << 8) | 0xE6)
+#define PSMOUSE_CMD_SETSCALE21  ((0 << 12) | (0 << 8) | 0xE7)
+#define PSMOUSE_CMD_SETRES      ((1 << 12) | (0 << 8) | 0xE8)
+#define PSMOUSE_CMD_GETINFO     ((0 << 12) | (3 << 8) | 0xE9)
+#define PSMOUSE_CMD_GETID       ((0 << 12) | (2 << 8) | 0xF2)
+#define PSMOUSE_CMD_SETRATE     ((1 << 12) | (0 << 8) | 0xF3)
+#define PSMOUSE_CMD_ENABLE      ((0 << 12) | (0 << 8) | 0xF4)
+#define PSMOUSE_CMD_DISABLE     ((0 << 12) | (0 << 8) | 0xF5)
+#define PSMOUSE_CMD_RESET_BAT   ((0 << 12) | (2 << 8) | 0xFF)
 
 // Status register bits.
 #define I8042_STR_PARITY        0x80
@@ -59,6 +60,7 @@
 // Control register bits.
 #define I8042_CTR_KBDINT        0x01
 #define I8042_CTR_AUXINT        0x02
+#define I8042_CTR_SYSTEM        0x04
 #define I8042_CTR_IGNKEYLOCK    0x08
 #define I8042_CTR_KBDDIS        0x10
 #define I8042_CTR_AUXDIS        0x20
@@ -157,7 +159,7 @@ static int i8042_command(uint16_t command, uint8_t *param)
     int recv = (command >> 8) & 0xF;
     int send = (command >> 12) & 0xF;
 
-    // debug_printf("i8042 command=%02X", (uint8_t)command);
+    debug_printf("i8042 command=%02X", (uint8_t)command);
 
     int ret = i8042_wait_write();
     if (ret) return ret;
@@ -166,7 +168,7 @@ static int i8042_command(uint16_t command, uint8_t *param)
     for (int i = 0; i < send; i++) {
         ret = i8042_wait_write();
         if (ret) return ret;
-        // debug_printf(" >%02X", param[i]);
+        debug_printf(" >%02X", param[i]);
         io_write_8(I8042_DATA, param[i]);
     }
 
@@ -174,10 +176,10 @@ static int i8042_command(uint16_t command, uint8_t *param)
         ret = i8042_wait_read();
         if (ret) return ret;
         param[i] = io_read_8(I8042_DATA);
-        // debug_printf(" <%02X", param[i]);
+        debug_printf(" <%02X", param[i]);
     }
 
-    // debug_printf("\n");
+    debug_printf("\n");
 
     return 0;
 }
@@ -194,9 +196,33 @@ static int i8042_aux_write(uint8_t c)
     return i8042_command(I8042_CMD_AUX_SEND, &c);
 }
 
-static uint8_t ps2_ctr = I8042_CTR_KBDDIS | I8042_CTR_AUXDIS;
+static int i8042_reset(struct device *dev)
+{
+    struct device_ps2kbms *dparam = dev->param;
 
-static int ps2_recvbyte(int aux, int needack, int timeout)
+    dparam->i8042_ctr = I8042_CTR_KBDDIS | I8042_CTR_AUXDIS;
+
+    // wait for i8042 to bootup
+    for (int i = 0; i < 1048576; i++) {}
+
+    // disable i8042 keyboard and mouse interface, then flush i8042 buffer
+    int ret = i8042_command(I8042_CMD_KBD_DISABLE, NULL);
+    if (ret) return ret;
+    ret = i8042_command(I8042_CMD_AUX_DISABLE, NULL);
+    if (ret) return ret;
+    ret = i8042_flush();
+    if (ret) return ret;
+
+    // i8042 self-test
+    uint8_t param[2];
+    ret = i8042_command(I8042_CMD_CTL_TEST, param);
+    if (ret) return ret;
+    if (param[0] != 0x55) return ret;
+
+    return 0;
+}
+
+static int ps2_recvbyte(int aux, int timeout)
 {
     for (int i = 0; i < timeout; i++) {
         uint8_t status = io_read_8(I8042_STATUS);
@@ -211,64 +237,72 @@ static int ps2_recvbyte(int aux, int needack, int timeout)
     return -1;
 }
 
-static int ps2_sendbyte(int aux, uint8_t command, int timeout)
+static int ps2_sendbyte(int aux, uint8_t command, int needack, int timeout)
 {
     int ret;
     if (aux) {
         ret = i8042_aux_write(command);
+
+        // wait for i8042 to send
+        for (int i = 0; i < 65536; i++) {}
     } else {
         ret = i8042_kbd_write(command);
     }
     if (ret) return ret;
 
-    ret = ps2_recvbyte(aux, 1, timeout);
-    if (ret < 0) return ret;
-    // if (ret != PS2_RET_ACK) return 1;
+    if (needack) {
+        ret = ps2_recvbyte(aux, timeout);
+        if (ret < 0) return ret;
+        debug_printf(" ack=%02X", ret);
+        if (ret != PS2_RET_ACK) return 1;
+    }
 
     return 0;
 }
 
-static int ps2_command(int aux, uint16_t command, uint8_t *param)
+static int ps2_command(struct device *dev, int aux, uint16_t command, uint8_t *param)
 {
+    int ret, ret2;
     int recv = (command >> 8) & 0xf;
     int send = (command >> 12) & 0xf;
+    struct device_ps2kbms *dparam = dev->param;
 
     // disable interrupt while sending command to the keyboard or mouse
-    uint8_t ps2_ctr_orig = ps2_ctr;
-    uint8_t ps2_ctr_temp = ps2_ctr;
-    ps2_ctr_temp |= I8042_CTR_AUXDIS | I8042_CTR_KBDDIS;
-    ps2_ctr_temp &= ~(I8042_CTR_KBDINT | I8042_CTR_AUXINT);
-    int ret = i8042_command(I8042_CMD_CTL_WCTR, &ps2_ctr_temp);
-    if (ret) return ret;
+    uint8_t i8042_ctr_temp = dparam->i8042_ctr;
+    i8042_ctr_temp &= ~(I8042_CTR_KBDINT | I8042_CTR_AUXINT);
+    i8042_ctr_temp |= I8042_CTR_AUXDIS | I8042_CTR_KBDDIS;
 
-    ps2_ctr = ps2_ctr_temp;
     if (aux) {
-        ps2_ctr_temp &= ~I8042_CTR_AUXDIS;
+        i8042_ctr_temp &= ~I8042_CTR_AUXDIS;
     } else {
-        ps2_ctr_temp &= ~I8042_CTR_KBDDIS;
+        i8042_ctr_temp &= ~I8042_CTR_KBDDIS;
     }
-    ret = i8042_command(I8042_CMD_CTL_WCTR, &ps2_ctr_temp);
+    ret = i8042_command(I8042_CMD_CTL_WCTR, &i8042_ctr_temp);
     if (ret) goto fail;
 
-    // debug_printf("ps2 %s cmd %02X", aux ? "aux" : "kbd", (uint8_t)command);
+    debug_printf("ps2 %s cmd %02X", aux ? "aux" : "kbd", (uint8_t)command);
 
     if ((uint8_t)command == (uint8_t)ATKBD_CMD_RESET_BAT) {
-        ret = ps2_sendbyte(aux, command, 1000);
+        ret = ps2_sendbyte(aux, command, 1, 1000000);
         if (ret) goto fail;
 
-        ret = ps2_recvbyte(aux, 0, 4000);
+        // wait for the keyboard to run self-test
+        for (int i = 0; i < 1048576; i++) {}
+
+        ret = ps2_recvbyte(aux, 40000);
         if (ret < 0) goto fail;
+        debug_printf(" <%02X", ret);
         param[0] = ret;
         for (int i = 1; i < recv; i++) {
-            ret = ps2_recvbyte(aux, 0, 500);
+            ret = ps2_recvbyte(aux, 5000);
             if (ret < 0) goto fail;
             param[i] = ret;
         } 
     } else if (command == ATKBD_CMD_GETID) {
-        ret = ps2_sendbyte(aux, command, 200);
+        ret = ps2_sendbyte(aux, command, 1, 2000);
         if (ret) goto fail;
 
-        ret = ps2_recvbyte(aux, 0, 500);
+        ret = ps2_recvbyte(aux, 5000);
         if (ret < 0) goto fail;
         param[0] = ret;
 
@@ -279,73 +313,83 @@ static int ps2_command(int aux, uint16_t command, uint8_t *param)
             case 0x5D:
             case 0x60:
             case 0x47:
-                ret = ps2_recvbyte(aux, 0, 500);
+                ret = ps2_recvbyte(aux, 5000);
                 if (ret < 0) goto fail;
                 param[1] = ret;
             default:
                 param[1] = 0;
         }
     } else {
-        ret = ps2_sendbyte(aux, command, 200);
+        ret = ps2_sendbyte(aux, command, 1, 20000);
         if (ret) goto fail;
 
         for (int i = 0; i < send; i++) {
-            // debug_printf(" >%02X", param[i]);
-            ret = ps2_sendbyte(aux, param[i], 200);
+            debug_printf(" >%02X", param[i]);
+            ret = ps2_sendbyte(aux, param[i], 1, 20000);
             if (ret)
                 goto fail;
         }
 
         for (int i = 0; i < recv; i++) {
-            ret = ps2_recvbyte(aux, 0, 500);
+            ret = ps2_recvbyte(aux, 50000);
             if (ret < 0)
                 goto fail;
             param[i] = ret;
-            // debug_printf(" <%02X", param[i]);
+            debug_printf(" <%02X", param[i]);
         }
     }
 
     ret = 0;
 
 fail:
+    debug_printf("\n");
     // restore original status
-    ps2_ctr = ps2_ctr_orig;
-    int ret2 = i8042_command(I8042_CMD_CTL_WCTR, &ps2_ctr_orig);
+    ret2 = i8042_command(I8042_CMD_CTL_WCTR, &dparam->i8042_ctr);
     if (ret2) return ret2;
 
     return ret;
 }
 
-static int ps2_kb_command(uint16_t command, uint8_t *param)
+static int ps2_kb_command(struct device *dev, uint16_t command, uint8_t *param)
 {
-    return ps2_command(0, command, param);
+    return ps2_command(dev, 0, command, param);
 }
 
-static int ps2_ms_command(uint16_t command, uint8_t* param)
+static int ps2_ms_command(struct device *dev, uint16_t command, uint8_t* param)
 {
-    return ps2_command(1, command, param);
+    return ps2_command(dev, 1, command, param);
 }
 
 void ps2kbms_irq_handler(struct device *dev)
 {
     struct device_ps2kbms *param = dev->param;
 
-    if ((ps2_ctr & (I8042_CTR_KBDDIS | I8042_CTR_AUXDIS)) ==
+    if ((param->i8042_ctr & (I8042_CTR_KBDDIS | I8042_CTR_AUXDIS)) ==
         (I8042_CTR_KBDDIS | I8042_CTR_AUXDIS)) {
         return;
     }
 
     uint8_t status, data;
-
     while ((status = io_read_8(I8042_STATUS)) & I8042_STR_OBF) {
         if (status & I8042_STR_AUXDATA) {
-            if (!(ps2_ctr & I8042_CTR_AUXDIS)) {
-                // process_mouse(data);
+            if (!(param->i8042_ctr & I8042_CTR_AUXDIS)) {
+                data = io_read_8(I8042_DATA);
+
+                if (param->ms_pkt_idx || (data & 0x08)) {
+                    param->ms_pkt_temp[param->ms_pkt_idx++] = data;
+                }
+
+                if (param->ms_pkt_idx == 3) {
+                    spinlock_irq_lock(&param->ms_pkt_lock);
+                    *(uint32_t*)param->ms_pkt = *(uint32_t*)param->ms_pkt_temp;
+                    spinlock_irq_unlock(&param->ms_pkt_lock);
+                    param->ms_pkt_idx = 0;
+                }
             }
         } else {
-            if (!(ps2_ctr & I8042_CTR_KBDDIS)) {
+            if (!(param->i8042_ctr & I8042_CTR_KBDDIS)) {
                 data = io_read_8(I8042_DATA);
-                // debug_printf("ps2kbd data: %02X\n", data);
+                // debug_printf("ps2kb data: %02X\n", data);
                 ringbuf8_push(param->kbbuf, data);
             }
         }
@@ -372,62 +416,126 @@ const char *ps2ms_get_vendor(struct device *dev)
     return "Unknown";
 }
 
-int ps2kbms_probe(struct device *dev)
-{
-    return 0;
-}
-
-int ps2kbms_reset(struct device *dev)
+int ps2kb_probe(struct device *dev)
 {
     struct device_ps2kbms *dparam = dev->param;
+    
+    if (!dparam->i8042_ctr) {
+        i8042_reset(dev);
+    }
 
-    dparam->kbd_state = 0;
-    dparam->mouse_x = 0;
-    dparam->mouse_y = 0;
-
-    int ret = i8042_flush();
-    if (ret) return ret;
-
-    // disable keyboard and mouse, then flush i8042 buffer
-    ret = i8042_command(I8042_CMD_KBD_DISABLE, NULL);
-    if (ret) return ret;
-    ret = i8042_command(I8042_CMD_AUX_DISABLE, NULL);
-    if (ret) return ret;
-    ret = i8042_flush();
-    if (ret) return ret;
-
-    // i8042 self-test
+    // i8042 test keyboard port
     uint8_t param[2];
-    ret = i8042_command(I8042_CMD_CTL_TEST, param);
-    if (ret) return ret;
-    if (param[0] != 0x55) return ret;
-
-    // keyboard self-test
-    ret = i8042_command(I8042_CMD_KBD_TEST, param);
+    int ret = i8042_command(I8042_CMD_KBD_TEST, param);
     if (ret) return ret;
     if (param[0] != 0x00) return 1;
 
-    // reset
+    // i8042 enable keyboard port
+    ret = i8042_command(I8042_CMD_KBD_ENABLE, NULL);
+    if (ret) return ret;
+    
+    return 0;
+}
+
+int ps2kb_reset(struct device *dev)
+{
+    struct device_ps2kbms *dparam = dev->param;
+    
+    if (!dparam->i8042_ctr) {
+        i8042_reset(dev);
+    }
+
+    dparam->kbd_state = 0;
+
+    // i8042 enable keyboard port
+    int ret = i8042_command(I8042_CMD_KBD_ENABLE, NULL);
+    if (ret) return ret;
+
+    // i8042 flush buffer
+    ret = i8042_flush();
+    if (ret) return ret;
+
+    // reset keyboard & self-test
+    uint8_t param[2];
     for (int i = 0; i < 100; i++) {
-        ret = ps2_kb_command(ATKBD_CMD_RESET_BAT, param);
+        ret = ps2_kb_command(dev, ATKBD_CMD_RESET_BAT, param);
         if (!ret) break;
     }
     if (param[0] != 0xAA) return 1;
 
-    ret = ps2_kb_command(ATKBD_CMD_RESET_DIS, NULL);
+    // disable keyboard
+    ret = ps2_kb_command(dev, ATKBD_CMD_RESET_DIS, NULL);
     if (ret) return ret;
 
     // set keyboard scan code set to 1
     param[0] = 0x01;
-    ret = ps2_kb_command(ATKBD_CMD_SSCANSET, NULL);
+    ret = ps2_kb_command(dev, ATKBD_CMD_SSCANSET, param);
     if (ret) return ret;
 
-    ret = ps2_kb_command(ATKBD_CMD_ENABLE, NULL);
+    dparam->i8042_ctr |= I8042_CTR_KBDINT;
+    dparam->i8042_ctr &= ~I8042_CTR_KBDDIS;
+
+    // enable keyboard
+    ret = ps2_kb_command(dev, ATKBD_CMD_ENABLE, NULL);
     if (ret) return ret;
 
-    ps2_ctr = I8042_CTR_AUXDIS | I8042_CTR_XLATE | I8042_CTR_KBDINT;
+    return 0;
+}
 
-    ret = ps2_kb_command(ATKBD_CMD_ENABLE, NULL);
+int ps2ms_probe(struct device *dev)
+{
+    struct device_ps2kbms *dparam = dev->param;
+    
+    if (!dparam->i8042_ctr) {
+        i8042_reset(dev);
+    }
+
+    // i8042 test aux port
+    uint8_t param[2];
+    int ret = i8042_command(I8042_CMD_AUX_TEST, param);
+    if (ret) return ret;
+    if (param[0] != 0x00) return 1;
+    
+    return 0;
+}
+
+int ps2ms_reset(struct device *dev)
+{
+    struct device_ps2kbms *dparam = dev->param;
+    
+    if (!dparam->i8042_ctr) {
+        i8042_reset(dev);
+    }
+
+    dparam->ms_pkt_idx = 0;
+    spinlock_irq_init(&dparam->ms_pkt_lock);
+
+    // i8042 flush buffer
+    int ret = i8042_flush();
+    if (ret) return ret;
+
+    // reset mouse & self-test
+    uint8_t param[2];
+    for (int i = 0; i < 100; i++) {
+        ret = ps2_ms_command(dev, PSMOUSE_CMD_RESET_BAT, param);
+        if (!ret) break;
+    }
+    if (param[0] != 0xAA) return 1;
+
+    // disable mouse
+    ret = ps2_ms_command(dev, PSMOUSE_CMD_DISABLE, NULL);
+    if (ret) return ret;
+
+    // set scale 1:1
+    param[0] = 0x01;
+    ret = ps2_ms_command(dev, PSMOUSE_CMD_SETSCALE11, param);
+    if (ret) return ret;
+
+    dparam->i8042_ctr |= I8042_CTR_AUXINT;
+    dparam->i8042_ctr &= ~I8042_CTR_AUXDIS;
+
+    // enable mouse
+    ret = ps2_ms_command(dev, PSMOUSE_CMD_ENABLE, NULL);
     if (ret) return ret;
 
     return 0;
@@ -593,4 +701,29 @@ void ps2kb_flush_buffer(struct device *dev)
 {
     struct device_ps2kbms *param = dev->param;
     ringbuf8_flush(param->kbbuf);
+}
+
+int ps2ms_get_status(struct device *dev, uint8_t *button, int *dx, int *dy)
+{
+    struct device_ps2kbms *param = dev->param;
+
+    spinlock_irq_lock(&param->ms_pkt_lock);
+    if (!(param->ms_pkt[0] & 0x08)) {
+        spinlock_irq_unlock(&param->ms_pkt_lock);
+        return 1;
+    }
+
+    if (button)
+        *button = param->ms_pkt[0] & 0x07;
+    
+    if (dx)
+        *dx = param->ms_pkt[1] - ((param->ms_pkt[0] << 4) & 0x100);
+
+    if (dy)
+        *dy = -(param->ms_pkt[2] - ((param->ms_pkt[0] << 3) & 0x100));
+
+    param->ms_pkt[0] = 0;
+    spinlock_irq_unlock(&param->ms_pkt_lock);
+
+    return 0;
 }

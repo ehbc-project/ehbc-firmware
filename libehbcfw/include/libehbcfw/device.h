@@ -65,8 +65,7 @@ struct keyboard_device_ops {
 
 struct mouse_device_ops {
     int (*set_param)(struct device *);
-    uint32_t (*get_status)(struct device *);
-    int (*get_movement)(struct device *);
+    int (*get_status)(struct device *, uint8_t *, int *, int *);
 };
 
 struct rtc_device_ops {

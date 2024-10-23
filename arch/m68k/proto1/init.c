@@ -121,8 +121,8 @@ struct device builtin_devices[] = {
         .class = DC_KEYBOARD,
         .get_name = ps2kb_get_name,
         .get_vendor = ps2kb_get_vendor,
-        .probe = ps2kbms_probe,
-        .reset = ps2kbms_reset,
+        .probe = ps2kb_probe,
+        .reset = ps2kb_reset,
         .keyboard_ops = {
             .get_char = ps2kb_get_key_char,
             .get_stroke = ps2kb_get_keystroke,
@@ -133,9 +133,11 @@ struct device builtin_devices[] = {
         .class = DC_MOUSE,
         .get_name = ps2ms_get_name,
         .get_vendor = ps2ms_get_vendor,
-        .probe = ps2kbms_probe,
-        .reset = ps2kbms_reset,
-        .mouse_ops = { NULL },
+        .probe = ps2ms_probe,
+        .reset = ps2ms_reset,
+        .mouse_ops = {
+            .get_status = ps2ms_get_status
+        },
         .param = &ps2kbms
     },
     {

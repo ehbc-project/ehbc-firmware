@@ -1,4 +1,11 @@
 .global         main
+.global         __bss_start
+.global         __bss_end
+.global         __data_init_start
+.global         __data_start
+.global         __data_init_end
+.global         __init_array_start
+.global         __init_array_end
 
 .text
 

@@ -345,7 +345,7 @@ static void cfgutil_enter(void)
 
 void cfgutil(void)
 {
-    int keystroke;
+    int keystroke, mouse_x = 0, mouse_y = 0, mouse_dx, mouse_dy;
 
     head = root_win_head;
     current = head;
@@ -353,7 +353,7 @@ void cfgutil(void)
 
     refresh = 1;
 
-    ehbcfw_video_set_cursor_shape(2, 0x2607);
+    ehbcfw_video_set_cursor_shape(2, 0x000F);
     cfgutil_draw_base();
 
     for (;;) {
@@ -363,7 +363,26 @@ void cfgutil(void)
             refresh = 0;
         }
 
-        while (!(keystroke = ehbcfw_kbd_get_keystroke(3))) {}
+        while (!(keystroke = ehbcfw_kbd_get_keystroke(3))) {
+            if (!ehbcfw_mouse_get_status(4, NULL, &mouse_dx, &mouse_dy)) {
+                mouse_x += mouse_dx;
+                mouse_y += mouse_dy;
+
+                if (mouse_x < 0) {
+                    mouse_x = 0;
+                } else if (mouse_x >= 640) {
+                    mouse_x = 639;
+                }
+
+                if (mouse_y < 0) {
+                    mouse_y = 0;
+                } else if (mouse_y >= 400) {
+                    mouse_y = 399;
+                }
+
+                ehbcfw_video_set_cursor_pos(2, (mouse_y / 16) * TERM_COL + (mouse_x / 8));
+            }
+        }
 
         switch (keystroke) {
             case 0x01:

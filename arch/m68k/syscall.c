@@ -92,6 +92,9 @@ static long syscall_handler_inputdev(const struct syscall_args *args)
         case 2:
             if (dev->class != DC_KEYBOARD) return 0;
             return dev->keyboard_ops.get_stroke(dev);
+        case 6:
+            if (dev->class != DC_MOUSE) return 0;
+            return dev->mouse_ops.get_status(dev, (void*)args->d[2], (void*)args->d[3], (void*)args->d[4]);
         default:
             break;
     }
